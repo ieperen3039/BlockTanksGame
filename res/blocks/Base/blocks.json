@@ -1,0 +1,53 @@
+{
+  "manufacturer" : "Jeb's Junkyard",
+  "blocks" : {
+    "block223" : {
+      "file" : "223_base.ply",
+      "size" : [2, 2, 3],
+      "mass" : 12.0,
+      "topPoints" : [
+          [1, 1, 3], [1, 0, 3],
+          [0, 1, 3], [0, 0, 3]
+        ],
+      "bottomPoints" : [
+          [1, 1, 0], [1, 0, 0],
+          [0, 1, 0], [0, 0, 0]
+        ]
+    },
+    "block221": {
+      "file" : "221_flat4.ply",
+      "size" : [2, 2, 1],
+      "mass" : 4.0,
+      "topPoints" : [
+        [1, 1, 1], [1, 0, 1],
+        [0, 1, 1], [0, 0, 1]
+      ],
+      "bottomPoints" : [
+        [1, 1, 0], [1, 0, 0],
+        [0, 1, 0], [0, 0, 0]
+      ]
+    },
+    "block111": {
+      "file" : "111_tick.ply",
+      "size" : [1, 1, 1],
+      "mass" : 1.0,
+      "topPoints" : [
+        [0, 0, 1]
+      ],
+      "bottomPoints" : [
+        [0, 0, 0]
+      ]
+    },
+    "block143": {
+      "file" : "143_bar.ply",
+      "size" : [1, 4, 3],
+      "mass" : 12.0,
+      "topPoints" : [
+        [0, 0, 3], [0, 1, 3], [0, 2, 3], [0, 3, 3]
+      ],
+      "bottomPoints" : [
+        [0, 0, 0], [0, 1, 0], [0, 2, 0], [0, 3, 0]
+      ]
+    }
+  }
+}
