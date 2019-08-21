@@ -42,8 +42,7 @@ public interface Entity {
      * necessary. The resulting state is only defined if {@code gameTime} is less than that of {@link
      * #getCurrentState()}{@link State#time() .time()}
      * @param gameTime the time where the state must be queried
-     * @return the state at the given time using linear interpolation
-     * @implNote default always returns the current state
+     * @return the state at the given time using linear interpolation. The default implementation always returns the current state
      */
     default State getStateAt(float gameTime) {
         return getCurrentState();

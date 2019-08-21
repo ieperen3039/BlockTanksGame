@@ -1,8 +1,8 @@
 package NG.Core;
 
-import NG.Blocks.BaseBlocks;
-import NG.Blocks.BlockTypeCollection;
-import NG.Blocks.FileBlockTypeCollection;
+import NG.Blocks.BasicBlocks;
+import NG.Blocks.FilePieceTypeCollection;
+import NG.Blocks.PieceTypeCollection;
 import NG.Camera.Camera;
 import NG.Camera.PointCenteredCamera;
 import NG.Camera.StrategyCamera;
@@ -110,10 +110,9 @@ public class MainGame implements ModLoader {
             game.add(new RenderBundle(new ParticleShader())
                     .add(gl -> game.get(GameParticles.class).draw(gl)));
 
-            BaseBlocks baseBlocks = new BaseBlocks();
-            baseBlocks.generateDefaults();
-            BlockTypeCollection fileBlocks = new FileBlockTypeCollection("Base");
-            HUDManager constMenu = new ConstructionMenu(baseBlocks, fileBlocks);
+            BasicBlocks.generateDefaults();
+            PieceTypeCollection fileBlocks = new FilePieceTypeCollection("Base");
+            HUDManager constMenu = new ConstructionMenu(new BasicBlocks(), fileBlocks);
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
             GameLights constLights = new SingleShadowMapLights();
             GameState constState = new EntityList();

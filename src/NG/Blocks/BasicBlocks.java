@@ -1,5 +1,6 @@
 package NG.Blocks;
 
+import NG.Blocks.Types.PieceType;
 import NG.Shapes.CustomShape;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -12,18 +13,18 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static NG.Blocks.Block.BLOCK_BASE;
-import static NG.Blocks.Block.BLOCK_HEIGHT;
+import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
+import static NG.Blocks.Types.BlockPiece.BLOCK_HEIGHT;
 
 /**
  * @author Geert van Ieperen created on 16-8-2019.
  */
-public class BaseBlocks implements BlockTypeCollection {
-    private static final Map<Vector3ic, BlockType> cache = new HashMap<>();
+public class BasicBlocks implements PieceTypeCollection {
+    private static final Map<Vector3ic, PieceType> cache = new HashMap<>();
     private static final Pattern namingScheme = Pattern.compile("block (\\d+)x(\\d+)x(\\d+)");
     public static final float BLOCK_BASE_H = BLOCK_BASE / 2;
 
-    public void generateDefaults() {
+    public static void generateDefaults() {
         for (int x = 1; x <= 8; x *= 2) {
             get(x, 3, 1);
             for (int y = x; y <= 8; y *= 2) {
@@ -35,8 +36,16 @@ public class BaseBlocks implements BlockTypeCollection {
         get(1, 1, 1);
     }
 
-    public BlockType get(int xSize, int ySize, int zSize) {
+    public static PieceType get(Vector3i size) {
+        return get(size.x(), size.y(), size.z(), size);
+    }
+
+    public static PieceType get(int xSize, int ySize, int zSize) {
         Vector3i size = new Vector3i(xSize, ySize, zSize);
+        return get(xSize, ySize, zSize, size);
+    }
+
+    private static PieceType get(int xSize, int ySize, int zSize, Vector3i size) {
         if (cache.containsKey(size)) return cache.get(size);
 
         CustomShape block = new CustomShape(new Vector3f(BLOCK_BASE / 2, BLOCK_BASE / 2, BLOCK_HEIGHT / 2));
@@ -66,7 +75,7 @@ public class BaseBlocks implements BlockTypeCollection {
             }
         }
 
-        BlockType newBlock = new BlockType(
+        PieceType newBlock = new PieceType(
                 String.format("block %dx%dx%d", xSize, ySize, zSize),
                 block.toMeshFile(), block.toShape(), size,
                 xSize * ySize * zSize, Arrays.asList(connections), nrOfStuds
@@ -80,7 +89,7 @@ public class BaseBlocks implements BlockTypeCollection {
         return "Cube Constructions";
     }
 
-    public BlockType getByName(String name) {
+    public PieceType getByName(String name) {
         Matcher matcher = namingScheme.matcher(name);
         if (matcher.matches()) {
             int x = Integer.parseInt(matcher.group(1));
@@ -92,7 +101,7 @@ public class BaseBlocks implements BlockTypeCollection {
     }
 
     @Override
-    public Collection<BlockType> getBlocks() {
+    public Collection<PieceType> getBlocks() {
         return cache.values();
     }
 }

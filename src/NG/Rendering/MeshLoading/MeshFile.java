@@ -77,7 +77,7 @@ public class MeshFile {
         }
     }
 
-    public Shape getShape(){
+    public Shape getShape() {
         return new BasicShape(vertices, normals, faces);
     }
 
@@ -95,12 +95,12 @@ public class MeshFile {
 
     /**
      * Loads the mesh located at the given file
-     * @param file the file to load
-     * @param offset the offset of the origin in the mesh, applied after the scaling
+     * @param file    the file to load
+     * @param offset  the offset of the origin in the mesh, applied after the scaling
      * @param scaling the scaling applied to the model
      * @return the data contained in the file
      * @throws java.io.FileNotFoundException if the file could not be found
-     * @throws IOException if the file name has no extension
+     * @throws IOException                   if the file name has no extension
      */
     public static MeshFile loadFile(Path file, Vector3fc offset, Vector3fc scaling) throws IOException {
         String fileName = file.getFileName().toString();
@@ -238,7 +238,8 @@ public class MeshFile {
      * @param doExact       Planes may span multiple containers. When true, these planes will occur in each of these
      *                      containers, possibly split in new planes. When false, the planes only occur in the container
      *                      with the lowest coordinate.
-     * @return a map that maps coordinates to containers, which has all planes of this mesh at least once, possibly split.
+     * @return a map that maps coordinates to containers, which has all planes of this mesh at least once, possibly
+     * split.
      */
     public HashMap<Vector3i, CustomShape> splitToShapes(float containerSize, boolean doExact) {
         HashMap<Vector3i, CustomShape> world = new HashMap<>();
@@ -281,7 +282,7 @@ public class MeshFile {
                         }
 
                         key.set(x, y, z);
-                        if (!world.containsKey(key)){
+                        if (!world.containsKey(key)) {
                             world.put(new Vector3i(key), new CustomShape());
                         }
                         world.get(key).addPlane(normal, edges);
@@ -297,4 +298,13 @@ public class MeshFile {
             super(fileName);
         }
     }
+
+    public static final MeshFile EMPTY_FILE = new MeshFile("empty", Collections.emptyList(), Collections.emptyList(),
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+    ){
+        @Override
+        public Mesh getMesh() {
+            return FlatMesh.EMPTY_MESH;
+        }
+    };
 }

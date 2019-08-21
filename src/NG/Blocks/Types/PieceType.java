@@ -1,5 +1,8 @@
-package NG.Blocks;
+package NG.Blocks.Types;
 
+import NG.DataStructures.Generic.Color4f;
+import NG.Entities.Entity;
+import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
@@ -10,19 +13,19 @@ import java.util.List;
 /**
  * @author Geert van Ieperen created on 16-8-2019.
  */
-public class BlockType {
+public class PieceType {
     public final String name;
     public final Shape hitbox;
     public final Vector3ic size;
     public final float mass;
 
-    private Mesh mesh;
-    private MeshFile meshFile;
+    protected Mesh mesh;
+    protected MeshFile meshFile;
 
-    private List<Vector3ic> connections;
-    private int femaleStart;
+    protected List<Vector3ic> connections;
+    protected int femaleStart;
 
-    public BlockType(
+    public PieceType(
             String name, MeshFile file, Shape hitbox, Vector3ic size, float mass, List<Vector3ic> connections,
             int femaleStart
     ) {
@@ -52,11 +55,15 @@ public class BlockType {
         return name;
     }
 
-    public Mesh getMesh() {
+    public void draw(SGL gl, Entity entity) {
         if (mesh == null) {
             mesh = meshFile.getMesh();
             meshFile = null;
         }
-        return mesh;
+        gl.render(mesh, entity);
+    }
+
+    public BlockPiece getInstance(Vector3ic position, Color4f color) {
+        return new BlockPiece(this, position, 0, color);
     }
 }

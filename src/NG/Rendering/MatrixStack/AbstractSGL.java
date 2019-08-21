@@ -54,7 +54,7 @@ public abstract class AbstractSGL implements SGL {
     }
 
     @Override
-    public void rotate(Vector3f axis, float angle) {
+    public void rotate(Vector3fc axis, float angle) {
         modelMatrix.rotate(angle, axis);
     }
 

@@ -1,4 +1,4 @@
-package NG.Blocks;
+package NG.Blocks.Types;
 
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.AABBi;
@@ -24,7 +24,7 @@ import java.util.function.IntConsumer;
 /**
  * @author Geert van Ieperen created on 14-8-2019.
  */
-public class Block {
+public class BlockPiece {
     public static final boolean RENDER_STUDS = true;
     private static final MeshFile STUD = MeshFile.loadFileRequired(Directory.meshes.getPath("stud.ply"));
     private static Mesh STUD_MESH = null;
@@ -32,31 +32,19 @@ public class Block {
     /* size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final float BLOCK_BASE = 0.8f;
     public static final float BLOCK_HEIGHT = 0.32f;
-    private final BlockType type;
+    protected final PieceType type;
 
-    private final Block[] connections;
-    private final Vector3i position;
-    private byte rotation;
+    private final BlockPiece[] connections;
+    protected final Vector3i position;
+    protected byte rotation;
     public Color4f color;
 
-    public Block(BlockType type, Vector3ic position) {
-        this(type, position, 0, Color4f.WHITE);
-    }
-
-    public Block(BlockType type, Vector3ic position, int zRotation, Color4f color) {
+    BlockPiece(PieceType type, Vector3ic position, int zRotation, Color4f color) {
         this.type = type;
         this.position = new Vector3i(position);
         this.rotation = (byte) zRotation;
-        this.connections = new Block[type.getConnections().size()];
+        this.connections = new BlockPiece[type.getConnections().size()];
         this.color = color;
-    }
-
-    public Block(Block other) {
-        this.type = other.type;
-        this.position = new Vector3i(other.position);
-        this.rotation = other.rotation;
-        this.connections = new Block[other.connections.length];
-        this.color = other.color;
     }
 
     /**
@@ -76,8 +64,8 @@ public class Block {
                     position.z * BLOCK_HEIGHT
             );
             gl.rotateQuarter(0, 0, rotation);
-            gl.render(type.getMesh(), entity);
 
+            // first render studs to preserve color (regarding sub-grids)
             if (RENDER_STUDS) {
                 if (STUD_MESH == null) STUD_MESH = STUD.getMesh();
 
@@ -88,15 +76,27 @@ public class Block {
                     gl.render(STUD_MESH, entity);
                     gl.popMatrix();
                 }
+                gl.translate(BLOCK_BASE / 2, BLOCK_BASE / 2, 0);
             }
+
+            drawPiece(gl, entity);
         }
         gl.popMatrix();
     }
 
     /**
+     * Draw the actual element. Overriding classes can use this to add additional details
+     * @param gl the gl object, positioned and rotated as this block
+     * @param entity the entity this block is part of
+     */
+    protected void drawPiece(SGL gl, Entity entity) {
+        type.draw(gl, entity);
+    }
+
+    /**
      * @return all connected blocks.
      */
-    public Collection<Block> getConnected() {
+    public Collection<BlockPiece> getConnected() {
         return Arrays.asList(connections);
     }
 
@@ -122,7 +122,7 @@ public class Block {
         return new AABBi(getPosition(), travel);
     }
 
-    public boolean intersects(Block other) {
+    public boolean intersects(BlockPiece other) {
         return getHitBox().intersects(other.getHitBox());
     }
 
@@ -145,23 +145,23 @@ public class Block {
      * The given block may not intersect the current block. A similar call to {@code other.connect(this)} must be made.
      * @param other some other block
      */
-    public void connect(Block other) {
+    public void connect(BlockPiece other) {
         assert !intersects(other);
 
         forEachConnection(other, connInd -> connections[connInd] = other);
     }
 
-    public BlockType getType() {
+    public PieceType getType() {
         return type;
     }
 
-    public boolean canConnect(Block buildCursor) {
+    public boolean canConnect(BlockPiece buildCursor) {
         boolean[] buffer = new boolean[]{false};
         forEachConnection(buildCursor, (i) -> buffer[0] = true);
         return buffer[0];
     }
 
-    private void forEachConnection(Block other, IntConsumer action) {
+    private void forEachConnection(BlockPiece other, IntConsumer action) {
         List<Vector3ic> thisConnections = type.getConnections();
         List<Vector3ic> otherConnections = other.type.getConnections();
 
@@ -198,5 +198,9 @@ public class Block {
     @Override
     public String toString() {
         return type + " " + getHitBox();
+    }
+
+    public BlockPiece copy() {
+        return new BlockPiece(type, position, rotation, color);
     }
 }

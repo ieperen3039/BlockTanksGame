@@ -121,7 +121,7 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
         int windowHeight = window.getHeight();
 
         timeObserver.startTiming("GUI");
-        overlay.draw(windowWidth, windowHeight, 10, Settings.TOOL_BAR_HEIGHT + 10, 16);
+        overlay.draw(windowWidth, windowHeight, windowWidth - 1000, 10, 16);
         timeObserver.endTiming("GUI");
 
         // update window
