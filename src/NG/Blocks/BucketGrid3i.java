@@ -25,7 +25,7 @@ public class BucketGrid3i<T> implements Iterable<T> {
 
     /**
      * creates a new bucketgrid with the same elements as this grid, but with the new given bucket size
-     * @param newBucketSize a large bucket size allows efficient editing, a small bucket size allows efficient querying
+     * @param newBucketSize new size of the bucket. A large bucket size allows efficient editing and is small, a small bucket size allows efficient querying
      * @return a copy of this bucketgrid, but having the new given bucket size
      */
     public BucketGrid3i<T> rebucket(int newBucketSize) { // TODO more efficient implementation
@@ -109,11 +109,12 @@ public class BucketGrid3i<T> implements Iterable<T> {
     }
 
     public void remove(T element, AABBi hitBox) {
+        boolean has = false;
         for (List<Element> list : bucketsOf(hitBox)) {
-            list.removeIf(elt -> elt.right.equals(element));
+            has |= list.removeIf(elt -> elt.right.equals(element));
         }
 
-        size--;
+        if (has) size--;
     }
 
     public Collection<T> values() {
@@ -123,14 +124,6 @@ public class BucketGrid3i<T> implements Iterable<T> {
                 set.add(elt.right);
             }
         }
-
-
-        HashSet<T> check = new HashSet<>();
-        for (ListGrid<Element> listGrid : grid) {
-            listGrid.forEach(e -> check.add(e.right));
-        }
-
-        assert set.containsAll(check) && check.containsAll(set) : String.format("%s \n%s", set, check);
 
         return set;
     }

@@ -1,5 +1,6 @@
 package NG;
 
+import NG.DataStructures.Generic.Color4f;
 import NG.Tools.Logger;
 import NG.Tools.Toolbox;
 import org.joml.*;
@@ -8,12 +9,13 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
  * An Object of this type can be written to file using a {@link DataOutputStream} and read from that file using a {@link
- * DataInputStream}. This object must have a public constructor that accepts a {@link DataInputStream} object as only parameter.
- * Implementing classes may not be inner classes (until a workaround has been found)
+ * DataInputStream}. This object must have a public constructor that accepts a {@link DataInputStream} object as only
+ * parameter. Implementing classes may not be inner classes (until a workaround has been found)
  * @author Geert van Ieperen. Created on 28-9-2018.
  */
 public interface Storable {
@@ -30,7 +32,8 @@ public interface Storable {
 
     /**
      * Writes the given object to the given data stream. The object must have a constructor that accepts exactly a
-     * {@link DataInputStream} as only parameter. The object can be restored with a call to {@link #read(DataInputStream, Class)}
+     * {@link DataInputStream} as only parameter. The object can be restored with a call to {@link
+     * #read(DataInputStream, Class)}
      * @param out    the data stream where to put the data to
      * @param object the object to store
      * @throws IOException if an I/O error occurs while writing data to the stream.
@@ -46,8 +49,8 @@ public interface Storable {
     }
 
     /**
-     * reads an object from the input stream, constructs it using a constructor that takes a {@link DataInputStream} object as
-     * only argument.
+     * reads an object from the input stream, constructs it using a constructor that takes a {@link DataInputStream}
+     * object as only argument.
      * @param in       a stream where this object has been written to.
      * @param expected the class that is expected to be read from the stream.
      * @throws IOException        if something goes wrong with reading the data from the input stream.
@@ -328,7 +331,7 @@ public interface Storable {
      * @throws IOException signals that anything went wrong. The output stream is untouched when this happens.
      */
     static void writeSafe(DataOutputStream out, Storable element) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(256);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(64); // increases if necessary
         DataOutputStream wrapOut = new DataOutputStream(buffer);
 
         write(wrapOut, element);
@@ -360,5 +363,26 @@ public interface Storable {
             assert skip == bits;
             return null;
         }
+    }
+
+    static DataOutputStream getOutputStream(Path file) throws FileNotFoundException {
+        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file.toFile())));
+    }
+
+    static DataInputStream getInputStream(Path file) throws FileNotFoundException {
+        return new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
+    }
+
+    static void writeColor(DataOutputStream out, Color4f color) throws IOException {
+        out.writeFloat(color.red);
+        out.writeFloat(color.green);
+        out.writeFloat(color.blue);
+        out.writeFloat(color.alpha);
+    }
+
+    static Color4f readColor(DataInputStream in) throws IOException {
+        return new Color4f(
+                in.readFloat(), in.readFloat(), in.readFloat(), in.readFloat()
+        );
     }
 }

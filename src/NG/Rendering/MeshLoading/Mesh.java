@@ -34,8 +34,7 @@ public interface Mesh {
         public final int[] col;
 
         public Face(int[] vertexIndices, int[] normalIndices, int[] textureIndices, int[] colors) {
-            int size = vertexIndices.length;
-            assert (normalIndices.length == size && textureIndices.length == size);
+            assert (vertexIndices.length == normalIndices.length);
 
             this.vert = vertexIndices;
             this.norm = normalIndices;
@@ -48,8 +47,7 @@ public interface Mesh {
          * list of vertices and normals that belong to a list of faces where this face is part of.
          */
         public Face(int[] vertices, int[] normals) {
-            int size = vertices.length;
-            assert (normals.length == size);
+            assert (normals.length == vertices.length);
 
             this.vert = vertices;
             this.norm = normals;

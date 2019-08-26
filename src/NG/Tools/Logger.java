@@ -249,6 +249,6 @@ public enum Logger {
      * @return the error logger as a printstream
      */
     public PrintStream getPrintStream() {
-        return System.err; // TODO mapping (lambda -> PrintStream)
+        return System.out; // TODO mapping (lambda -> PrintStream)
     }
 }

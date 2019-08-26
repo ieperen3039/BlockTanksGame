@@ -14,15 +14,14 @@ import org.joml.Vector3ic;
 public class WheelPiece extends BlockPiece {
     private PieceTypeWheel type;
     private float angle;
-    private float rotationSpeed = 1;
 
     WheelPiece(PieceTypeWheel type, Vector3ic position, Color4f color) {
         super(type, position, 0, color);
         this.type = type;
     }
 
-    public void update(float deltaTime){
-        angle += deltaTime * rotationSpeed;
+    public void setAngle(float angle) {
+        this.angle = angle;
     }
 
     @Override

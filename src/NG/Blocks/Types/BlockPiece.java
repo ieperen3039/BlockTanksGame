@@ -1,5 +1,6 @@
 package NG.Blocks.Types;
 
+import NG.Blocks.BlockSubGrid;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.AABBi;
 import NG.DataStructures.Generic.Color4f;
@@ -10,15 +11,20 @@ import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Rendering.Shaders.MaterialShader;
 import NG.Rendering.Shaders.ShaderProgram;
+import NG.Storable;
 import NG.Tools.Directory;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.IntConsumer;
 
 /**
@@ -32,10 +38,11 @@ public class BlockPiece {
     /* size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final float BLOCK_BASE = 0.8f;
     public static final float BLOCK_HEIGHT = 0.32f;
+
     protected final PieceType type;
+    protected final Vector3i position;
 
     private final BlockPiece[] connections;
-    protected final Vector3i position;
     protected byte rotation;
     public Color4f color;
 
@@ -51,6 +58,8 @@ public class BlockPiece {
      * draw this block
      */
     public void draw(SGL gl, Entity entity) {
+        if (color.alpha == 0) return;
+
         ShaderProgram shader = gl.getShader();
         if (shader instanceof MaterialShader) {
             ((MaterialShader) shader).setMaterial(Material.PLASTIC, color);
@@ -86,7 +95,7 @@ public class BlockPiece {
 
     /**
      * Draw the actual element. Overriding classes can use this to add additional details
-     * @param gl the gl object, positioned and rotated as this block
+     * @param gl     the gl object, positioned and rotated as this block
      * @param entity the entity this block is part of
      */
     protected void drawPiece(SGL gl, Entity entity) {
@@ -112,14 +121,46 @@ public class BlockPiece {
         return position;
     }
 
-    public AABBi getHitBox(){
+    /**
+     * @param grid
+     * @return real-world position as if it were placed in the given subgrid
+     */
+    public Vector3f getWorldPosition(BlockSubGrid grid) {
+        Vector3f localOffset = new Vector3f(
+                position.x * BLOCK_BASE,
+                position.y * BLOCK_BASE,
+                position.z * BLOCK_HEIGHT
+        );
+        Vector3f gPos = grid.getWorldPosition();
+        return localOffset.rotate(grid.getWorldRotation()).add(gPos);
+    }
+
+    public AABBi getHitBox() {
         Vector3i travel = new Vector3i(type.size).sub(1, 1, 1);
-        for (byte i = 0; i < rotation; i++) {
-            //noinspection SuspiciousNameCombination
-            travel.set(-travel.y, travel.x, travel.z);
+        Vector3i virtualPos = new Vector3i(getPosition());
+
+        if (travel.x < 0) {
+            virtualPos.x += travel.x;
+            travel.x = 0;
+        }
+        if (travel.y < 0) {
+            virtualPos.y += travel.y;
+            travel.y = 0;
+        }
+        if (travel.z < 0) {
+            virtualPos.z += travel.z;
+            travel.z = 0;
         }
 
-        return new AABBi(getPosition(), travel);
+        rotateQuarters(travel, rotation);
+        return new AABBi(virtualPos, travel);
+    }
+
+    private static void rotateQuarters(Vector3i vector, byte quarters) {
+        for (byte i = 0; i < quarters; i++) {
+            //noinspection SuspiciousNameCombination
+            vector.set(-vector.y, vector.x, vector.z);
+        }
     }
 
     public boolean intersects(BlockPiece other) {
@@ -169,18 +210,12 @@ public class BlockPiece {
             Vector3ic connection = thisConnections.get(i);
 
             Vector3i p = new Vector3i(connection);
-            for (byte j = 0; j < rotation; j++) {
-                //noinspection SuspiciousNameCombination
-                p.set(-p.y, p.x, p.z);
-            }
+            rotateQuarters(p, rotation);
             p.add(position);
 
             for (Vector3ic oc : otherConnections) {
                 Vector3i q = new Vector3i(oc);
-                for (byte j = 0; j < other.rotation; j++) {
-                    //noinspection SuspiciousNameCombination
-                    q.set(-q.y, q.x, q.z);
-                }
+                rotateQuarters(q, rotation);
                 q.add(other.position);
 
                 if (p.equals(q)) {
@@ -202,5 +237,30 @@ public class BlockPiece {
 
     public BlockPiece copy() {
         return new BlockPiece(type, position, rotation, color);
+    }
+
+    public void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        out.writeInt(typeMap.get(type));
+
+        out.writeInt(position.x);
+        out.writeInt(position.y);
+        out.writeInt(position.z);
+
+        out.writeByte(rotation);
+        Storable.writeColor(out, color);
+    }
+
+    BlockPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+        type = typeMap[in.readInt()];
+        connections = new BlockPiece[type.getConnections().size()];
+        position = new Vector3i(
+                in.readInt(), in.readInt(), in.readInt()
+        );
+        rotation = in.readByte();
+        color = Storable.readColor(in);
+    }
+
+    public byte getRotationByte() {
+        return rotation;
     }
 }

@@ -26,7 +26,7 @@ public class PieceTypeWheel extends PieceType {
     }
 
     @Override
-    public BlockPiece getInstance(Vector3ic position, Color4f color) {
+    public BlockPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
         return new WheelPiece(this, position, color);
     }
 

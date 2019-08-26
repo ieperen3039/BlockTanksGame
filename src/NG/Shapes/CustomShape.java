@@ -48,7 +48,7 @@ public class CustomShape {
     public CustomShape(Vector3fc middle, boolean invertMiddle) {
         this.middle = middle;
         this.faces = new ArrayList<>();
-        this.points = new Hashtable<>();
+        this.points = new HashMap<>();
         this.normals = new ArrayList<>();
         this.invertMiddle = invertMiddle;
     }
@@ -273,9 +273,9 @@ public class CustomShape {
         }
         for (int i = 1; i < (edges.length - 2); i++) {
             if (normal == null) {
-                addTriangle(edges[i], edges[i + 1], edges[i + 2]);
+                addTriangle(edges[0], edges[i], edges[i + 1]);
             } else {
-                addTriangle(edges[i], edges[i + 1], edges[i + 2], normal);
+                addTriangle(edges[0], edges[i], edges[i + 1], normal);
             }
         }
     }

@@ -11,7 +11,7 @@ import org.joml.Vector2ic;
  * @author Geert van Ieperen created on 12-7-2019.
  */
 public class SComponentArea extends SContainer {
-    private static final SFiller FILLER = new SFiller();
+    private static final SFiller FILLER = SFiller.get();
     private int width;
     private int height;
     private boolean hidden = true;

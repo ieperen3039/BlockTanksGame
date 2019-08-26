@@ -150,4 +150,8 @@ public class BoundingBox extends AABBf {
     public boolean testFustrum(FrustumIntersection fic) {
         return fic.testAab(minX, minY, minZ, maxX, maxY, maxZ);
     }
+
+    public Vector3f size() {
+        return new Vector3f(maxX - minX, maxY - minY, maxZ - minZ);
+    }
 }

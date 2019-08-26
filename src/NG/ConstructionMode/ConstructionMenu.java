@@ -1,9 +1,11 @@
 package NG.ConstructionMode;
 
+import NG.Blocks.BlockSubGrid;
 import NG.Blocks.BlocksConstruction;
 import NG.Blocks.PieceTypeCollection;
 import NG.Blocks.Types.BlockPiece;
 import NG.Blocks.Types.PieceType;
+import NG.Camera.Camera;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.GameState;
 import NG.Core.Game;
@@ -28,6 +30,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     private static final int NUM_SHOWN_ELTS = 10;
     public static final Color4f SELECTION_COLOR = new Color4f(1f, 1f, 1f, 0.5f);
     private BlocksConstruction construction;
+    private BlocksConstruction.GridModificator modificator;
     private BlockPiece currentBlock;
     private Color4f color = Color4f.BLUE;
 
@@ -37,9 +40,14 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
             new Color4f(1f, 1f, 0.1f), // yellow
             new Color4f(0, 1f, 0) // green
     };
+    private Runnable returnProcedure;
 
-    public ConstructionMenu(PieceTypeCollection... blockTypes) {
+    public ConstructionMenu(Runnable exit, PieceTypeCollection... blockTypes) {
         super(new BaseLF());
+        returnProcedure = exit;
+
+        SButton optionsButton = new SButton("Menu", () -> addElement(getMenu()), 0, 100);
+        optionsButton.setGrowthPolicy(true, false);
 
         SComponentArea blockTypeArea = new SComponentArea(400, 80);
 
@@ -67,16 +75,44 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
             colorOptions[i] = new SColoredButton(50, 50, c, () -> color = c);
         }
 
+        SButton selectNextSubgrid = new SButton("<", () -> {
+            modificator.next();
+            Camera cam = game.get(Camera.class); // TODO camera rotation upon switching subgrid
+//            cam.set(cam.getFocus(), constructor.getGrid().getWorldRotation());
+        });
+        SButton selectPrevSubgrid = new SButton(">", () -> modificator.previous());
+
         SPanel mainPanel = SPanel.row(false, false,
                 SPanel.column(false, true,
+                        optionsButton,
                         categorySelection,
                         blockTypeArea,
-                        SPanel.row(colorOptions)
+                        SPanel.row(colorOptions),
+                        SPanel.row(selectNextSubgrid, selectPrevSubgrid)
                 ),
-                new SFiller()
+                SFiller.get()
         );
 
         display(mainPanel);
+    }
+
+    private SComponent getMenu() {
+        SButton.BProps bProps = new SButton.BProps(300, 80, false, false);
+
+        return SPanel.row(
+                SFiller.get(),
+                SPanel.column(
+                        SFiller.get(),
+                        new SButton("Save", () -> saveConstruction(construction, "temp.conbi"), bProps),
+                        new SButton("Exit", () -> returnProcedure.run(), bProps),
+                        SFiller.get()
+                ),
+                SFiller.get()
+        );
+    }
+
+    private void saveConstruction(BlocksConstruction construction, String fileName) {
+
     }
 
     @Override
@@ -89,7 +125,14 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
             public void draw(SGL gl, float renderTime) {
                 super.draw(gl, renderTime);
                 if (currentBlock != null) {
-                    currentBlock.draw(gl, null);
+                    gl.pushMatrix();
+                    {
+                        BlockSubGrid g = modificator.getGrid();
+                        gl.translate(g.getWorldPosition());
+                        gl.rotate(g.getWorldRotation());
+                        currentBlock.draw(gl, null);
+                    }
+                    gl.popMatrix();
                 }
             }
 
@@ -101,7 +144,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
                 );
             }
         };
-
+        modificator = construction.getSubgridModificator();
         game.get(MouseToolCallbacks.class).addKeyPressListener(this);
         game.get(GameState.class).addEntity(construction);
     }
@@ -114,7 +157,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
 
     private void select(PieceType type) {
         Vector3ic position = currentBlock == null ? new Vector3i() : currentBlock.getPosition();
-        currentBlock = type.getInstance(position, SELECTION_COLOR);
+        currentBlock = type.getInstance(position, 0, SELECTION_COLOR);
     }
 
     @Override
@@ -148,12 +191,12 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
                 break;
 
             case BLOCK_CONFIRM:
-                if (construction.canAttach(currentBlock)) {
-                    BlockPiece newAttachment = currentBlock;
-                    currentBlock = currentBlock.copy();
+                if (modificator.canAttach(currentBlock)) {
+                    BlockPiece newAttachment = currentBlock.copy();
 
                     newAttachment.color = color;
-                    construction.add(newAttachment);
+                    modificator.add(newAttachment);
+
                     Logger.DEBUG.print("Added " + newAttachment);
                 }
                 break;

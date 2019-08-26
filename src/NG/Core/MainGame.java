@@ -19,8 +19,8 @@ import NG.GUIMenu.Frames.FrameGUIManager;
 import NG.GUIMenu.Frames.FrameManagerImpl;
 import NG.GUIMenu.HUDManager;
 import NG.GUIMenu.TankHUD;
-import NG.GameMap.EmptyMap;
 import NG.GameMap.GameMap;
+import NG.GameMap.MeshMap;
 import NG.InputHandling.ClickShader;
 import NG.InputHandling.MouseToolCallbacks;
 import NG.Mods.JarModReader;
@@ -72,6 +72,7 @@ public class MainGame implements ModLoader {
         try {
             Logger.INFO.print("Starting up the game engine...");
             String mainThreadName = Thread.currentThread().getName();
+            gameService = new Game.Proxy(null);
 
             // these are not GameAspects, and thus the init() rule does not apply.
             Settings settings = new Settings();
@@ -91,8 +92,7 @@ public class MainGame implements ModLoader {
             Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
             GameLights lights = new SingleShadowMapLights();
             GameState state = new PhysicsEngine();
-//            GameMap map = new MeshMap(Directory.maps.getPath("map.obj"));
-            GameMap map = new EmptyMap();
+            GameMap map = new MeshMap(Directory.maps.getPath("map.obj"));
             GameParticles particles = new GameParticles();
 
             game = new GameService(GAME_VERSION, mainThreadName, renderer,
@@ -112,7 +112,7 @@ public class MainGame implements ModLoader {
 
             BasicBlocks.generateDefaults();
             PieceTypeCollection fileBlocks = new FilePieceTypeCollection("Base");
-            HUDManager constMenu = new ConstructionMenu(new BasicBlocks(), fileBlocks);
+            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), new BasicBlocks(), fileBlocks);
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
             GameLights constLights = new SingleShadowMapLights();
             GameState constState = new EntityList();
@@ -127,7 +127,7 @@ public class MainGame implements ModLoader {
                     .add(Toolbox::drawAxisFrame)
             );
 
-            gameService = new Game.Proxy(menu);
+            gameService.select(menu);
 
         } catch (Exception ex) {
             splashWindow.dispose();
@@ -245,14 +245,15 @@ public class MainGame implements ModLoader {
         SFrame frame = new SFrame("Main menu", width, height, false);
         frame.setMainPanel(
                 SPanel.row(
-                        new SFiller(),
+                        SFiller.get(),
                         SPanel.column(
-                                new SFiller(),
+                                SFiller.get(),
                                 new SButton("New Construction", () -> gameService.select(construction), bProps),
+                                new SButton("See Map", () -> gameService.select(game), bProps),
                                 new SButton("Exit", renderer::stopLoop, bProps),
-                                new SFiller()
+                                SFiller.get()
                         ),
-                        new SFiller()
+                        SFiller.get()
                 ));
         return frame;
     }

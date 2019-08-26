@@ -14,11 +14,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author Geert van Ieperen created on 6-5-2018.
  */
 public final class FileLoaders {
+
+    public static final Pattern SLASH = Pattern.compile("/");
+
     /**
      * @param offSet offset of the gravity middle in this mesh as the negative of the vector to the gravity middle
      * @param scale  the scaling applied to the loaded object
@@ -208,11 +212,13 @@ public final class FileLoaders {
         int[] tex = new int[nrOfVerices];
 
         for (int i = 0; i < nrOfVerices; i++) {
-            String[] indices = tokens[i + 1].split("/");
+            String[] indices = SLASH.split(tokens[i + 1]);
             vert[i] = readSymbol(indices[0]);
             tex[i] = readSymbol(indices[1]);
             norm[i] = readSymbol(indices[2]);
         }
+
+        if (tex[0] == -1) tex = null;
 
         return new Mesh.Face(vert, norm, tex, null);
     }

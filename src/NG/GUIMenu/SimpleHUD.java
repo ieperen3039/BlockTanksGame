@@ -82,8 +82,8 @@ public abstract class SimpleHUD implements HUDManager {
         freeFloatingElements.forEach(SComponent::validateLayout);
         mainPanel.validateLayout();
 
-        freeFloatingElements.forEach(e -> e.draw(lookAndFeel, e.getPosition()));
         mainPanel.draw(lookAndFeel, new Vector2i(0, 0));
+        freeFloatingElements.forEach(e -> e.draw(lookAndFeel, e.getPosition()));
     }
 
     @Override

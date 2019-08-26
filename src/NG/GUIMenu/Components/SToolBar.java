@@ -34,8 +34,8 @@ public class SToolBar extends SContainer implements MouseReleaseListener, MouseR
         super(MAX_BAR_ICONS, 1, true);
         this.game = game;
         if (doSides) {
-            add(new SFiller(), null);
-            super.add(new SFiller(), new Vector2i(MAX_BAR_ICONS - 1, 0));
+            add(SFiller.get(), null);
+            super.add(SFiller.get(), new Vector2i(MAX_BAR_ICONS - 1, 0));
         }
     }
 
@@ -73,7 +73,7 @@ public class SToolBar extends SContainer implements MouseReleaseListener, MouseR
      * separators are all equal.
      */
     public void addSeparator() {
-        add(new SFiller(), null);
+        add(SFiller.get(), null);
     }
 
     @Override

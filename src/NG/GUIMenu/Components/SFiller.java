@@ -7,6 +7,8 @@ import org.joml.Vector2ic;
  * @author Geert van Ieperen. Created on 21-9-2018.
  */
 public class SFiller extends SComponent {
+    public static final SFiller BASIC_FILLER = new SFiller();
+
     private final int minWidth;
     private final int minHeight;
 
@@ -16,7 +18,7 @@ public class SFiller extends SComponent {
         setGrowthPolicy(true, true);
     }
 
-    public SFiller() {
+    private SFiller() {
         this(0, 0);
     }
 
@@ -37,5 +39,9 @@ public class SFiller extends SComponent {
     @Override
     public SComponent getComponentAt(int xRel, int yRel) {
         return null;
+    }
+
+    public static SFiller get() {
+        return BASIC_FILLER;
     }
 }

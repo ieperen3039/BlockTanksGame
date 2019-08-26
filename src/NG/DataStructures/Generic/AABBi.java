@@ -91,6 +91,17 @@ public class AABBi {
 
     @Override
     public String toString() {
-        return String.format("(%d, %d, %d, %d, %d, %d)", xMin, yMin, zMin, xMax, yMax, zMax);
+        return String.format(
+                "([%s, %s], [%s, %s], [%s, %s])",
+                asMin(xMin), asMax(xMax), asMin(yMin), asMax(yMax), asMin(zMin), asMax(zMax)
+        );
+    }
+
+    private static String asMin(int min) {
+        return min == Integer.MAX_VALUE ? "-" : Integer.toString(min);
+    }
+
+    private static String asMax(int max) {
+        return max == Integer.MIN_VALUE ? "-" : Integer.toString(max);
     }
 }

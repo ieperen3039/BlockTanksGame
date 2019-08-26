@@ -4,16 +4,13 @@ import NG.DataStructures.Generic.Color4f;
 import NG.Shapes.BasicShape;
 import NG.Shapes.CustomShape;
 import NG.Shapes.Shape;
+import NG.Storable;
 import NG.Tools.Logger;
 import NG.Tools.Vectors;
-import org.joml.Vector2fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-import org.joml.Vector3i;
+import org.joml.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.lang.Math;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
@@ -21,7 +18,7 @@ import java.util.*;
 /**
  * @author Geert van Ieperen created on 28-2-2019.
  */
-public class MeshFile {
+public class MeshFile implements Storable {
     private final List<Vector2fc> textureCoords;
     private final List<Vector3fc> vertices;
     private final List<Vector3fc> normals;
@@ -71,7 +68,7 @@ public class MeshFile {
 
     public Mesh getMesh() {
         if (isTextured()) {
-            return new TexturedMesh(this);
+            return new TexturedMesh(this.getVertices(), this.getFaces(), this.getNormals(), this.getTextureCoords());
         } else {
             return new FlatMesh(getVertices(), getNormals(), getFaces());
         }
@@ -95,15 +92,15 @@ public class MeshFile {
 
     /**
      * Loads the mesh located at the given file
-     * @param file    the file to load
+     * @param path    the path to the file to load
      * @param offset  the offset of the origin in the mesh, applied after the scaling
      * @param scaling the scaling applied to the model
      * @return the data contained in the file
      * @throws java.io.FileNotFoundException if the file could not be found
      * @throws IOException                   if the file name has no extension
      */
-    public static MeshFile loadFile(Path file, Vector3fc offset, Vector3fc scaling) throws IOException {
-        String fileName = file.getFileName().toString();
+    public static MeshFile loadFile(Path path, Vector3fc offset, Vector3fc scaling) throws IOException {
+        String fileName = path.getFileName().toString();
 
         if (!fileName.contains(".")) throw new IOException("File name has no extension: " + fileName);
         String extension = fileName.substring(fileName.lastIndexOf('.'));
@@ -111,9 +108,12 @@ public class MeshFile {
         try {
             switch (extension) {
                 case ".obj":
-                    return FileLoaders.loadOBJ(offset, scaling, file, fileName);
+                    return FileLoaders.loadOBJ(offset, scaling, path, fileName);
                 case ".ply":
-                    return FileLoaders.loadPLY(offset, scaling, file, fileName);
+                    return FileLoaders.loadPLY(offset, scaling, path, fileName);
+                case ".mesbi":
+                    FileInputStream fin = new FileInputStream(path.toFile());
+                    return new MeshFile(new DataInputStream(fin));
                 default:
                     throw new UnsupportedMeshFileException(fileName);
             }
@@ -185,6 +185,117 @@ public class MeshFile {
         return name;
     }
 
+
+    @Override
+    public void writeToDataStream(DataOutputStream out) throws IOException {
+        out.writeUTF(name);
+
+        out.writeInt(vertices.size());
+        for (Vector3fc v : vertices) {
+            Storable.writeVector3f(out, v);
+        }
+        out.writeInt(normals.size());
+        for (Vector3fc n : normals) {
+            Storable.writeVector3f(out, n);
+        }
+        int nrOfTex = textureCoords.size();
+        out.writeInt(nrOfTex);
+        for (Vector2fc t : textureCoords) {
+            out.writeFloat(t.x());
+            out.writeFloat(t.y());
+        }
+        int nrOfCol = colors.size();
+        out.writeInt(nrOfCol);
+        for (Color4f c : colors) {
+            out.writeFloat(c.red);
+            out.writeFloat(c.green);
+            out.writeFloat(c.blue);
+            out.writeFloat(c.alpha);
+        }
+        out.writeInt(faces.size());
+        for (Mesh.Face face : faces) {
+            out.writeByte(face.size());
+            for (int vi : face.vert) {
+                out.writeInt(vi);
+            }
+            for (int ni : face.norm) {
+                out.writeInt(ni);
+            }
+
+            if (nrOfTex != 0) {
+                for (int tex : face.tex) {
+                    out.writeInt(tex);
+                }
+            }
+            if (nrOfCol != 0) {
+                for (int ci : face.col) {
+                    out.writeInt(ci);
+                }
+            }
+        }
+    }
+
+    public MeshFile(DataInputStream in) throws IOException {
+        name = in.readUTF();
+
+        int vSize = in.readInt();
+        vertices = new ArrayList<>(vSize);
+        for (int i = 0; i < vSize; i++) {
+            vertices.add(Storable.readVector3f(in));
+        }
+        int nSize = in.readInt();
+        normals = new ArrayList<>(nSize);
+        for (int i = 0; i < nSize; i++) {
+            normals.add(Storable.readVector3f(in));
+        }
+        int tSize = in.readInt();
+        textureCoords = new ArrayList<>(tSize);
+        for (int i = 0; i < tSize; i++) {
+            textureCoords.add(new Vector2f(in.readFloat(), in.readFloat()));
+        }
+        int cSize = in.readInt();
+        colors = new ArrayList<>(cSize);
+        for (int i = 0; i < cSize; i++) {
+            colors.add(new Color4f(
+                    in.readFloat(),
+                    in.readFloat(),
+                    in.readFloat(),
+                    in.readFloat()
+            ));
+        }
+        int fSize = in.readInt();
+        faces = new ArrayList<>(fSize);
+        for (int i = 0; i < fSize; i++) {
+            int nVert = in.readByte(); // nr of vertices of this face
+            int[] vert = new int[nVert];
+            int[] norm = new int[nVert];
+            int[] tex = null;
+            int[] col = null;
+
+            for (int j = 0; j < nVert; j++) {
+                vert[j] = in.readInt();
+            }
+            for (int j = 0; j < nVert; j++) {
+                norm[j] = in.readInt();
+            }
+
+            if (tSize != 0) {
+                tex = new int[nVert];
+                for (int j = 0; j < nVert; j++) {
+                    tex[j] = in.readInt();
+                }
+            }
+            if (cSize != 0) {
+                col = new int[nVert];
+                for (int j = 0; j < nVert; j++) {
+                    col[j] = in.readInt();
+                }
+            }
+
+            faces.add(new Mesh.Face(vert, norm, tex, col));
+        }
+    }
+
     /**
      * creates multiple shapes, splitting it into sections of size containersize.
      * @param containerSize size of splitted container, which is applied in 3 dimensions
@@ -248,15 +359,18 @@ public class MeshFile {
         Vector3i min = new Vector3i();
         Vector3i max = new Vector3i();
 
-        for (Mesh.Face f : getFaces()) {
-            Vector3fc[] edges = new Vector3fc[f.size()];
-            min.zero();
-            max.zero();
+        int bloat = 0;
 
-            for (int i = 0; i < f.size(); i++) {
-                Vector3fc v = vertices.get(f.vert[i]);
-                edges[i] = v;
-                coord.set((int) (v.x() / containerSize), (int) (v.y() / containerSize), (int) (v.z() / containerSize));
+        for (Mesh.Face face : getFaces()) {
+            Vector3fc[] faceVecs = new Vector3fc[face.size()];
+
+            min.set(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+            max.set(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
+
+            for (int i = 0; i < face.size(); i++) {
+                Vector3fc v = vertices.get(face.vert[i]);
+                faceVecs[i] = v;
+                coord.set((int) Math.floor(v.x() / containerSize), (int) Math.floor(v.y() / containerSize), (int) Math.floor(v.z() / containerSize));
                 max.max(coord);
                 min.min(coord);
             }
@@ -264,13 +378,13 @@ public class MeshFile {
             if (!doExact) max.set(min);
 
             Vector3i key = new Vector3i();
-            for (int x = min.x; x < max.x; x++) {
-                for (int z = min.z; z < max.z; z++) {
-                    for (int y = min.y; y < max.y; y++) {
+            for (int x = min.x; x <= max.x; x++) {
+                for (int z = min.z; z <= max.z; z++) {
+                    for (int y = min.y; y <= max.y; y++) {
                         // on average, this is executed (tileSize / containerSize) times - usually only once
 
                         Vector3f normal = new Vector3f();
-                        for (int ind : f.norm) {
+                        for (int ind : face.norm) {
                             if (ind < 0) continue;
                             normal.add(getNormals().get(ind));
                         }
@@ -285,11 +399,14 @@ public class MeshFile {
                         if (!world.containsKey(key)) {
                             world.put(new Vector3i(key), new CustomShape());
                         }
-                        world.get(key).addPlane(normal, edges);
+                        world.get(key).addPlane(normal, faceVecs);
+                        bloat++;
                     }
                 }
             }
+            bloat--;
         }
+        if (doExact) Logger.DEBUG.printf("Mesh split: Increased number of faces by %1.02f%%", (float) 100 * bloat / faces.size());
         return world;
     }
 

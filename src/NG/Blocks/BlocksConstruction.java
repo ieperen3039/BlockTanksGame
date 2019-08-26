@@ -1,5 +1,7 @@
 package NG.Blocks;
 
+import NG.Blocks.Types.BlockPiece;
+import NG.Blocks.Types.JointPiece;
 import NG.Blocks.Types.PieceType;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
@@ -11,23 +13,21 @@ import NG.Entities.MovingEntity;
 import NG.Entities.MutableState;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
-import NG.Tools.GridRayScanner;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
-import static NG.Blocks.Types.BlockPiece.BLOCK_HEIGHT;
-
 /**
- * A block grid as entity
+ * An entity made from block grids
  * @author Geert van Ieperen created on 14-8-2019.
  */
-public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
+public class BlocksConstruction implements MovingEntity {
     private boolean isDisposed = false;
     private State state;
+    private List<BlockSubGrid> subgrids = new ArrayList<>();
 
     public BlocksConstruction() {
         this(new Vector3fx(), 0);
@@ -35,15 +35,7 @@ public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
 
     public BlocksConstruction(Vector3fxc position, float gameTime) {
         this.state = new MutableState(gameTime, position);
-    }
-
-    public BlocksConstruction(PieceType initial) {
-        this(initial, new Vector3fx(), 0);
-    }
-
-    public BlocksConstruction(PieceType initial, Vector3fx position, int gameTime) {
-        this(position, gameTime);
-        add(initial, new Vector3i(), Color4f.WHITE);
+        subgrids.add(new BlockSubGrid());
     }
 
     @Override
@@ -52,11 +44,22 @@ public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
     }
 
     @Override
+    public float getMass() {
+        float sum = 0f;
+        for (BlockSubGrid subgrid : subgrids) {
+            sum += subgrid.getMass();
+        }
+        return sum;
+    }
+
+    @Override
     public void draw(SGL gl, float renderTime) {
         gl.pushMatrix();
         {
             gl.translateRotate(state);
-            draw(gl, this);
+            for (BlockSubGrid subgrid : subgrids) {
+                subgrid.draw(gl, this);
+            }
         }
         gl.popMatrix();
     }
@@ -73,7 +76,7 @@ public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
 
     @Override
     public BoundingBox getBoundingBox() {
-        if (blocks.isEmpty()) return new BoundingBox();
+        if (subgrids.isEmpty()) return new BoundingBox();
 
         return new BoundingBox( // TODO calculate hitbox including rotation and subgrids
                 50, 50, 50, 50, 50, 50
@@ -89,13 +92,23 @@ public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
 
     @Override
     public Collision getIntersection(Vector3fc origin, Vector3fc direction) {
-        if (blocks.isEmpty()) return Collision.NONE;
+        Collision intersection = Collision.NONE;
 
-        return new GridRayScanner(
-                bounds.size(),
-                new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT),
-                new BlockIntersections()
-        ).getIntersection(origin, direction, false);
+        for (BlockSubGrid subgrid : subgrids) {
+            Collision next = subgrid.getRayScanner()
+                    .getIntersection(origin, direction, false);
+
+            if (next.isEarlierThan(intersection)) {
+                intersection = next;
+            }
+        }
+
+        return intersection;
+    }
+
+    public GridModificator getSubgridModificator() {
+        assert !subgrids.isEmpty();
+        return new GridModificator();
     }
 
     @Override
@@ -106,6 +119,68 @@ public class BlocksConstruction extends BlockSubGrid implements MovingEntity {
     @Override
     public void collideWith(Entity other, Collision collision, float collisionTime) {
 
+    }
+
+    public class GridModificator {
+        BlockSubGrid target;
+        int index = 0;
+
+        private GridModificator() {
+            validateCache();
+        }
+
+        ;
+
+        public void add(PieceType type, Vector3ic position, Color4f color) {
+            add(type.getInstance(position, 0, color));
+        }
+
+        public void add(BlockPiece block) {
+            target.add(block);
+
+            if (block instanceof JointPiece) {
+                JointPiece jointBlock = (JointPiece) block;
+                // try to connect with any of the existing subgrids
+                boolean found = false;
+                for (BlockSubGrid subgrid : subgrids) {
+                    if (subgrid.canParent(target, jointBlock, true)) {
+                        subgrid.setParent(target, jointBlock, true);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    BlockSubGrid newGrid = new BlockSubGrid();
+                    newGrid.setParent(target, jointBlock, true);
+                    subgrids.add(newGrid);
+                }
+            }
+        }
+
+        public void next() {
+            index++;
+            validateCache();
+        }
+
+        private void validateCache() {
+            index = Math.floorMod(index, subgrids.size());
+            target = subgrids.get(index);
+        }
+
+        public void previous() {
+            index--;
+            validateCache();
+        }
+
+        public boolean canAttach(BlockPiece element) {
+            // TODO check overlap with other subgrids
+            return target.canAttach(element);
+        }
+
+        public BlockSubGrid getGrid() {
+            return target;
+        }
     }
 
     @Override
