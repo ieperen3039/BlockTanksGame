@@ -5,17 +5,21 @@ import NG.DataStructures.Generic.Color4f;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * @author Geert van Ieperen created on 19-8-2019.
  */
-public class JointPiece extends BlockPiece {
+public class JointPiece extends AbstractPiece {
     private Vector3i axis;
     private PieceTypeJoint type;
     private BlockSubGrid subgrid;
 
-    JointPiece(PieceTypeJoint jType, Vector3ic position, int rotation, Color4f color) {
-        super(jType, position, rotation, color);
-        this.type = jType;
+    JointPiece(PieceTypeJoint type, Vector3ic position, int rotation, Color4f color) {
+        super(position, rotation, color, type.getConnections().size());
+        this.type = type;
         axis = new Vector3i(type.axis);
 
         for (byte i = 0; i < rotation; i++) {
@@ -25,17 +29,33 @@ public class JointPiece extends BlockPiece {
     }
 
     @Override
-    public BlockPiece copy() {
-        return new JointPiece(type, position, rotation, color);
-    }
-
-    public Vector3ic getAxis() {
-        return axis;
+    public void rotateZ(boolean clockwise) {
+        super.rotateZ(clockwise);
+        if (clockwise) {
+            //noinspection SuspiciousNameCombination
+            axis.set(-axis.y, axis.x, axis.z);
+        } else {
+            //noinspection SuspiciousNameCombination
+            axis.set(axis.y, -axis.x, axis.z);
+        }
     }
 
     @Override
     public PieceTypeJoint getType() {
         return type;
+    }
+
+    public AbstractPiece copy() {
+        return new JointPiece(type, position, rotation, color);
+    }
+
+    @Override
+    public void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public Vector3ic getAxis() {
+        return axis;
     }
 
     public void setSubgrid(BlockSubGrid subgrid) {

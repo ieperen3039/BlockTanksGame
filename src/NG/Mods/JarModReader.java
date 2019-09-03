@@ -80,7 +80,7 @@ public final class JarModReader {
 
         URLClassLoader modloader = new URLClassLoader(urls);
 
-        Logger.DEBUG.print("Reading " + urls.length + " jar files...");
+        Logger.DEBUG.print("Found " + urls.length + " jar files...");
         List<Mod> mods = new ArrayList<>();
         for (File jar : modJars) {
             try {

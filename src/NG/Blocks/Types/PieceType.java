@@ -63,7 +63,7 @@ public class PieceType {
         gl.render(mesh, entity);
     }
 
-    public BlockPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
+    public AbstractPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
         return new BlockPiece(this, position, zRotation, color);
     }
 }

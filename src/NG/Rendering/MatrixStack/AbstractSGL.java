@@ -4,6 +4,7 @@ import NG.DataStructures.Vector3fxc;
 import NG.Entities.State;
 import org.joml.*;
 
+import java.lang.Math;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -119,7 +120,9 @@ public abstract class AbstractSGL implements SGL {
 
     @Override
     public void rotateQuarter(int x, int y, int z) {
-        assert x >= 0 && y >= 0 && z >= 0;
+        x = Math.floorMod(x, 4);
+        y = Math.floorMod(y, 4);
+        z = Math.floorMod(z, 4);
 
         for (int i = 0; i < x; i++) {
             modelMatrix.mulAffine(QUARTER_X);

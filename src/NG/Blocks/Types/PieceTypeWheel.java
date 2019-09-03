@@ -11,7 +11,7 @@ import org.joml.Vector3ic;
 
 import java.util.Collections;
 
-import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
 
 /**
  * @author Geert van Ieperen created on 20-8-2019.
@@ -20,13 +20,17 @@ public class PieceTypeWheel extends PieceType {
     public PieceTypeWheel(String name, MeshFile mesh, float radius, float mass) {
         super(
                 name, mesh, getWheelBox(radius),
-                new Vector3i((int) (2 * radius / BLOCK_BASE + 1), (int) (2 * radius / BLOCK_BASE + 1), 1),
+                new Vector3i((int) Math.ceil(2 * radius / BLOCK_BASE), (int) Math.ceil(2 * radius / BLOCK_BASE), 1),
                 mass, Collections.emptyList(), 0
         );
     }
 
+    public WheelPiece getInstance(Color4f color){
+        return new WheelPiece(this, new Vector3i(0), color);
+    }
+
     @Override
-    public BlockPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
+    public AbstractPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
         return new WheelPiece(this, position, color);
     }
 

@@ -3,7 +3,7 @@ package NG.ConstructionMode;
 import NG.Blocks.BlockSubGrid;
 import NG.Blocks.BlocksConstruction;
 import NG.Blocks.PieceTypeCollection;
-import NG.Blocks.Types.BlockPiece;
+import NG.Blocks.Types.AbstractPiece;
 import NG.Blocks.Types.PieceType;
 import NG.Camera.Camera;
 import NG.CollisionDetection.BoundingBox;
@@ -31,7 +31,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     public static final Color4f SELECTION_COLOR = new Color4f(1f, 1f, 1f, 0.5f);
     private BlocksConstruction construction;
     private BlocksConstruction.GridModificator modificator;
-    private BlockPiece currentBlock;
+    private AbstractPiece currentBlock;
     private Color4f color = Color4f.BLUE;
 
     public static final Color4f[] COLORS = new Color4f[]{
@@ -130,7 +130,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
                         BlockSubGrid g = modificator.getGrid();
                         gl.translate(g.getWorldPosition());
                         gl.rotate(g.getWorldRotation());
-                        currentBlock.draw(gl, null);
+                        currentBlock.draw(gl, null, renderTime);
                     }
                     gl.popMatrix();
                 }
@@ -192,7 +192,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
 
             case BLOCK_CONFIRM:
                 if (modificator.canAttach(currentBlock)) {
-                    BlockPiece newAttachment = currentBlock.copy();
+                    AbstractPiece newAttachment = currentBlock.copy();
 
                     newAttachment.color = color;
                     modificator.add(newAttachment);

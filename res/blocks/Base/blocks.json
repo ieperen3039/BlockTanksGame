@@ -3,10 +3,21 @@
   "slogan" : "Space-grade materials for a junk price!",
 
   "blocks" : {
-      "hinge_small" : {
-        "graphic" : "wheel_hinge_small.ply",
-        "mass" : 1.0,
-        "hidden" : true
+      "Small half wheelbase" : {
+        "graphic" : "wheel_hinge_121_half.ply",
+        "size" : [3, 1, 1],
+        "mass" : 3.0,
+        "topPoints" : [
+          [0, 0, 1], [1, 0, 1]
+        ],
+        "bottomPoints" : [
+          [0, 0, 0], [1, 0, 0]
+        ],
+        "wheelConnections" : [{
+          "size" : 0.0016,
+          "hingeOffset" : [0.0166, 0.004, 0.0016],
+          "axis" : "x"
+        }]
       },
 
       "connection14" : {
@@ -19,20 +30,10 @@
   },
 
   "joints" : {
-      "corner 1x4x3" : {
+      "Corner 1x4x3" : {
         "bottom" : [1, 4, 3],
         "top" : "connection14",
         "axis" : "y",
-        "minAngle" : 90,
-        "maxAngle" : 90,
-        "jointOffset" : [0.0, 0.0, 0.0056],
-        "headOffset" : [0.0, 0.0, 0.004]
-      },
-
-      "wheelbase 1x4" : {
-        "bottom" : [1, 2, 1],
-        "top" : "hinge_small",
-        "axis" : "x",
         "minAngle" : 90,
         "maxAngle" : 90,
         "jointOffset" : [0.0, 0.0, 0.0056],
@@ -41,7 +42,7 @@
   },
 
   "wheels" : {
-    "wheel small" : {
+    "Wheel small" : {
       "graphic" : "wheel_small.ply",
       "radius" : 1.5,
       "mass" : 2

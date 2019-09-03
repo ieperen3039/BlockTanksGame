@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
-import static NG.Blocks.Types.BlockPiece.BLOCK_HEIGHT;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_HEIGHT;
 
 /**
  * @author Geert van Ieperen created on 16-8-2019.
@@ -33,7 +33,7 @@ public class BasicBlocks implements PieceTypeCollection {
             }
         }
 
-        get(1, 1, 1);
+//        get(1, 1, 1);
     }
 
     public static PieceType get(Vector3i size) {

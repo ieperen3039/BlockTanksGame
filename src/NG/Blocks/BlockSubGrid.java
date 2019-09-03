@@ -1,6 +1,6 @@
 package NG.Blocks;
 
-import NG.Blocks.Types.BlockPiece;
+import NG.Blocks.Types.AbstractPiece;
 import NG.Blocks.Types.JointPiece;
 import NG.Blocks.Types.PieceType;
 import NG.Blocks.Types.PieceTypeJoint;
@@ -17,16 +17,16 @@ import java.io.IOException;
 import java.lang.Math;
 import java.util.*;
 
-import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
-import static NG.Blocks.Types.BlockPiece.BLOCK_HEIGHT;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_HEIGHT;
 
 /**
  * @author Geert van Ieperen created on 20-8-2019.
  */
-public class BlockSubGrid extends AbstractCollection<BlockPiece> {
+public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     private static final int BUCKET_SIZE = 5;
     private static final float TAU = (float) Math.PI * 2;
-    protected BucketGrid3i<BlockPiece> blocks = new BucketGrid3i<>(BUCKET_SIZE);
+    protected BucketGrid3i<AbstractPiece> blocks = new BucketGrid3i<>(BUCKET_SIZE);
     protected AABBi bounds = new AABBi();
     protected float totalMass = 0;
 
@@ -45,7 +45,7 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
         rotation = new Quaternionf();
     }
 
-    public boolean add(BlockPiece block) {
+    public boolean add(AbstractPiece block) {
         PieceType type = block.getType();
         AABBi hitBox = block.getHitBox();
 
@@ -151,25 +151,25 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
         return totalMass;
     }
 
-    public boolean canAttach(BlockPiece element) {
+    public boolean canAttach(AbstractPiece element) {
         if (blocks.isEmpty()) return true;
 
         AABBi box = element.getHitBox();
 
-        List<BlockPiece> nearbyBlocks = blocks.get(
+        List<AbstractPiece> nearbyBlocks = blocks.get(
                 box.xMin, box.yMin, box.zMin - 1,
                 box.xMax, box.yMax, box.zMax + 1
         );
 
         // none may overlap
-        for (BlockPiece block : nearbyBlocks) {
+        for (AbstractPiece block : nearbyBlocks) {
             if (block.intersects(element)) {
                 Logger.DEBUG.print("Block " + element + " overlaps with " + block);
                 return false;
             }
         }
         // at least one must connect
-        for (BlockPiece block : nearbyBlocks) {
+        for (AbstractPiece block : nearbyBlocks) {
             if (block.canConnect(element)) return true;
         }
 
@@ -177,14 +177,14 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
         return false;
     }
 
-    public void draw(SGL gl, Entity entity) {
+    public void draw(SGL gl, Entity entity, float renderTime) {
         gl.pushMatrix();
         {
             gl.translate(getWorldPosition());
             gl.rotate(getWorldRotation());
 
-            for (BlockPiece block : blocks) {
-                block.draw(gl, entity);
+            for (AbstractPiece block : blocks) {
+                block.draw(gl, entity, renderTime);
             }
         }
         gl.popMatrix();
@@ -193,7 +193,7 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
     public void writeToDataStream(DataOutputStream out, HashMap<PieceType, Integer> typeMap) throws IOException {
 
         out.writeInt(blocks.size());
-        for (BlockPiece s : blocks) {
+        for (AbstractPiece s : blocks) {
             s.writeToDataStream(out, typeMap);
         }
     }
@@ -207,16 +207,16 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
     }
 
     @Override
-    public Iterator<BlockPiece> iterator() {
+    public Iterator<AbstractPiece> iterator() {
         return blocks.iterator();
     }
 
     @Override
     public boolean remove(Object o) {
-        if (o instanceof BlockPiece) {
+        if (o instanceof AbstractPiece) {
             int firstSize = blocks.size();
 
-            BlockPiece asBlock = (BlockPiece) o;
+            AbstractPiece asBlock = (AbstractPiece) o;
             blocks.remove(asBlock, asBlock.getHitBox());
 
             return firstSize == blocks.size();
@@ -244,12 +244,12 @@ public class BlockSubGrid extends AbstractCollection<BlockPiece> {
     }
 
     protected class BlockIntersections implements GridRayScanner.Intersectable {
-        Set<BlockPiece> seen = new HashSet<>();
+        Set<AbstractPiece> seen = new HashSet<>();
         private Vector3f blockLocalOrigin = new Vector3f();
 
         @Override
         public Collision getIntersection(Vector3fc origin, Vector3fc direction, int xCoord, int yCoord, int zCoord) {
-            BlockPiece target = blocks.get(xCoord, yCoord, zCoord);
+            AbstractPiece target = blocks.get(xCoord, yCoord, zCoord);
             if (seen.contains(target)) return Collision.NONE;
             seen.add(target);
 

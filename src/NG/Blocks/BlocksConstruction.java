@@ -1,8 +1,6 @@
 package NG.Blocks;
 
-import NG.Blocks.Types.BlockPiece;
-import NG.Blocks.Types.JointPiece;
-import NG.Blocks.Types.PieceType;
+import NG.Blocks.Types.*;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.Color4f;
@@ -13,6 +11,7 @@ import NG.Entities.MovingEntity;
 import NG.Entities.MutableState;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Tools.Logger;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3ic;
@@ -58,7 +57,7 @@ public class BlocksConstruction implements MovingEntity {
         {
             gl.translateRotate(state);
             for (BlockSubGrid subgrid : subgrids) {
-                subgrid.draw(gl, this);
+                subgrid.draw(gl, this, renderTime);
             }
         }
         gl.popMatrix();
@@ -121,6 +120,16 @@ public class BlocksConstruction implements MovingEntity {
 
     }
 
+    @Override
+    public void dispose() {
+        isDisposed = true;
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return isDisposed;
+    }
+
     public class GridModificator {
         BlockSubGrid target;
         int index = 0;
@@ -129,13 +138,11 @@ public class BlocksConstruction implements MovingEntity {
             validateCache();
         }
 
-        ;
-
         public void add(PieceType type, Vector3ic position, Color4f color) {
             add(type.getInstance(position, 0, color));
         }
 
-        public void add(BlockPiece block) {
+        public void add(AbstractPiece block) {
             target.add(block);
 
             if (block instanceof JointPiece) {
@@ -155,6 +162,17 @@ public class BlocksConstruction implements MovingEntity {
                     newGrid.setParent(target, jointBlock, true);
                     subgrids.add(newGrid);
                 }
+
+            } else if (block instanceof WheelBasePiece){
+                WheelBasePiece wheelBaseBlock = (WheelBasePiece) block;
+                List<WheelPiece> wheels = wheelBaseBlock.getWheels();
+                Logger.DEBUG.printf("Adding %s wheels", wheels.size());
+
+                PieceTypeWheel wheel = (PieceTypeWheel) FilePieceTypeCollection.cheatCache.get("Wheel small");
+
+                for (int i = 0; i < wheels.size(); i++) {
+                    wheels.add(i, wheel.getInstance(Color4f.WHITE));
+                }
             }
         }
 
@@ -173,7 +191,7 @@ public class BlocksConstruction implements MovingEntity {
             validateCache();
         }
 
-        public boolean canAttach(BlockPiece element) {
+        public boolean canAttach(AbstractPiece element) {
             // TODO check overlap with other subgrids
             return target.canAttach(element);
         }
@@ -181,16 +199,6 @@ public class BlocksConstruction implements MovingEntity {
         public BlockSubGrid getGrid() {
             return target;
         }
-    }
-
-    @Override
-    public void dispose() {
-        isDisposed = true;
-    }
-
-    @Override
-    public boolean isDisposed() {
-        return isDisposed;
     }
 
 }

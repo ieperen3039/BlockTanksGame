@@ -1,31 +1,32 @@
 package NG.Blocks;
 
 import NG.Blocks.Types.PieceType;
+import NG.Blocks.Types.PieceTypeHinge;
 import NG.Blocks.Types.PieceTypeJoint;
 import NG.Blocks.Types.PieceTypeWheel;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
 import NG.Tools.Directory;
-import NG.Tools.Logger;
 import NG.Tools.Toolbox;
+import NG.Tools.Vectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-import org.joml.Vector3i;
-import org.joml.Vector3ic;
+import org.joml.*;
 
 import java.io.IOException;
+import java.lang.Math;
 import java.nio.file.Path;
 import java.util.*;
 
-import static NG.Blocks.Types.BlockPiece.BLOCK_BASE;
+import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
 
 /**
  * a collection of block types. parsing is done as described in res/blocks/readme.txt
  * @author Geert van Ieperen created on 16-8-2019.
  */
 public class FilePieceTypeCollection implements PieceTypeCollection {
+    public static final Map<String, PieceType> cheatCache = new HashMap<>(); // tracks all loaded piece types
+
     public static final float SCALE = 100;
     private static final int COLLISION_FACE_LIMIT = 200;
 
@@ -59,28 +60,32 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
                 mesh = MeshFile.EMPTY_FILE;
             }
 
+            JsonNode sizeNode = block.findValue("size");
+            Vector3i size = (sizeNode != null) ? readVector3i(sizeNode) : null;
+
             JsonNode shapeNode = block.findValue("collision");
             Shape shape;
             if (shapeNode != null) {
-                if (shapeNode.isArray()) {
-                    shape = BasicBlocks.get(readVector3i(shapeNode)).hitbox;
-
-                } else {
                     String shapeFile = shapeNode.textValue();
                     shape = MeshFile.loadFile(path.resolve(shapeFile),
                             new Vector3f(-BLOCK_BASE / 2, -BLOCK_BASE / 2, 0),
                             new Vector3f(SCALE, SCALE, SCALE)
                     ).getShape();
-                }
+
+                    if (size == null) {
+                        AABBf bb = shape.getBoundingBox();
+                        size = new Vector3i(
+                                (int) Math.ceil(bb.maxX - bb.minX),
+                                (int) Math.ceil(bb.maxY - bb.minY),
+                                (int) Math.ceil(bb.maxZ - bb.minZ)
+                        );
+                    }
 
             } else {
-                Logger.DEBUG.print("No collision for block " + name + " of " + manufacturer);
+                if (size == null) throw new IOException("block " + name + " has no size and no hitbox");
 
-                shape = MeshFile.EMPTY_FILE.getShape();
+                shape = BasicBlocks.get(size).hitbox;
             }
-
-            JsonNode sizeNode = block.findValue("size");
-            Vector3i size = (sizeNode != null) ? readVector3i(sizeNode) : new Vector3i();
 
             JsonNode massNode = block.findValue("mass");
             float mass = (massNode != null) ? massNode.floatValue() : 0;
@@ -100,8 +105,34 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
                     connections.add(readVector3i(point));
                 }
             }
+            PieceType pieceType;
 
-            PieceType pieceType = new PieceType(name, mesh, shape, size, mass, connections, femaleStart);
+            JsonNode wheelConnectionNode = block.findValue("wheelConnections");
+            if (wheelConnectionNode != null){
+                assert wheelConnectionNode.isArray();
+
+                Float axisSize = null;
+                List<Short> axes = new ArrayList<>();
+                List<Vector3fc> offsets = new ArrayList<>();
+
+                for (JsonNode conn : wheelConnectionNode) {
+                    float conSize = conn.findValue("size").floatValue();
+                    if (axisSize == null) axisSize = conSize;
+                    else assert axisSize == conSize : "Multiple axis sizes are not supported (yet)";
+
+                    Vector3f conOffset = readVector3f(conn.findValue("hingeOffset")).mul(SCALE, SCALE, SCALE);
+                    offsets.add(conOffset);
+
+                    short conAxis = (short) conn.findValue("axis").textValue().charAt(0);
+                    axes.add(conAxis);
+                }
+
+                assert axisSize != null;
+                pieceType = new PieceTypeHinge(name, mesh, shape, size, mass, connections, femaleStart, axisSize, axes, offsets);
+
+            } else {
+                pieceType = new PieceType(name, mesh, shape, size, mass, connections, femaleStart);
+            }
 
             JsonNode hiddenNode = block.findValue("hidden");
             if (hiddenNode == null || !hiddenNode.asBoolean()) {
@@ -176,7 +207,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             if (meshNode != null) {
                 String meshFile = meshNode.textValue();
                 mesh = MeshFile.loadFile(path.resolve(meshFile),
-                        new Vector3f(-BLOCK_BASE / 2, -BLOCK_BASE / 2, 0),
+                        Vectors.O,
                         new Vector3f(SCALE, SCALE, SCALE)
                 );
 
@@ -192,6 +223,8 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
 
             blocks.put(name, new PieceTypeWheel(name, mesh, radius, mass));
         }
+
+        cheatCache.putAll(blocks); // TODO remove
     }
 
     public FilePieceTypeCollection(String mapName) throws IOException {

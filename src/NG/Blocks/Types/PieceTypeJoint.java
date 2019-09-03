@@ -54,7 +54,7 @@ public class PieceTypeJoint extends PieceType {
     }
 
     @Override
-    public BlockPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
+    public AbstractPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
         return new JointPiece(this, position, 0, color);
     }
 }
