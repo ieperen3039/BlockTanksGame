@@ -36,7 +36,8 @@ public class BlockPiece extends AbstractPiece {
 
     @Override
     public void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
-        out.writeInt(typeMap.get(type));
+        Integer typeID = typeMap.computeIfAbsent(type, t -> typeMap.size());
+        out.writeInt(typeID);
     }
 
     public BlockPiece(DataInputStream in, PieceType[] typeMap) throws IOException {

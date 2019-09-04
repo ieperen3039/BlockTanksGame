@@ -135,6 +135,6 @@ public class DefaultMouseTool implements MouseTool {
         HUDManager gui = game.get(HUDManager.class);
         if (gui.checkMouseScroll(pos.x, pos.y, value)) return;
 
-        game.get(Camera.class).onScroll(value);
+        game.ifAvailable(Camera.class, c -> c.onScroll(value));
     }
 }

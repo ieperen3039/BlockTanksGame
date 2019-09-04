@@ -18,6 +18,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3ic;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -137,15 +138,19 @@ public class BlocksConstruction implements MovingEntity {
 
     @Override
     public void writeToDataStream(DataOutputStream out) throws IOException {
+        Storable.write(out, state);
+
         HashMap<PieceType, Integer> types = new HashMap<>();
 
-        for (BlockSubGrid subgrid : subgrids) {
-            for (AbstractPiece piece : subgrid) {
-                PieceType type = piece.getType();
-                types.computeIfAbsent(type, t -> types.size());
-            }
+        // write the construction to buffer, while collecting type information
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        DataOutputStream bufferOut = new DataOutputStream(buffer);
+        bufferOut.writeInt(subgrids.size());
+        for (BlockSubGrid s : subgrids) {
+            s.writeToDataStream(bufferOut, types);
         }
 
+        // gather types and connect id values
         PieceType[] sorted = new PieceType[types.size()];
         types.forEach((v, i) -> sorted[i] = v);
 
@@ -154,11 +159,8 @@ public class BlocksConstruction implements MovingEntity {
             out.writeUTF(type.name);
         }
 
-        Storable.write(out, state);
-        out.writeInt(subgrids.size());
-        for (BlockSubGrid s : subgrids) {
-            s.writeToDataStream(out, types);
-        }
+        // now write construction to out
+        buffer.writeTo(out);
     }
 
     public BlocksConstruction(DataInputStream in) throws IOException, ClassNotFoundException {
@@ -211,7 +213,7 @@ public class BlocksConstruction implements MovingEntity {
                     subgrids.add(newGrid);
                 }
 
-            } else if (block instanceof WheelBasePiece){
+            } else if (block instanceof WheelBasePiece) {
                 WheelBasePiece wheelBaseBlock = (WheelBasePiece) block;
                 List<WheelPiece> wheels = wheelBaseBlock.getWheels();
                 Logger.DEBUG.printf("Adding %s wheels", wheels.size());
