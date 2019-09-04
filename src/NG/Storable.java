@@ -1,6 +1,8 @@
 package NG;
 
 import NG.DataStructures.Generic.Color4f;
+import NG.DataStructures.Vector3fx;
+import NG.DataStructures.Vector3fxc;
 import NG.Tools.Logger;
 import NG.Tools.Toolbox;
 import org.joml.*;
@@ -44,7 +46,9 @@ public interface Storable {
             return;
         }
 
-        writeClass(out, object.getClass());
+        Class<? extends Storable> objClass = object.getClass();
+        if (objClass.isAnonymousClass()) throw new IllegalArgumentException("Anonymous classes can't be stored");
+        writeClass(out, objClass);
         object.writeToDataStream(out);
     }
 
@@ -287,9 +291,11 @@ public interface Storable {
      * @param file the file to write to, existing or not.
      */
     default void writeToFile(File file) {
-        try (OutputStream fileStream = new FileOutputStream(file)) {
-            DataOutputStream out = new DataOutputStream(fileStream);
-            Logger.DEBUG.print("Writing " + file, this);
+        try (
+                OutputStream fileStream = new FileOutputStream(file);
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(fileStream, 512))
+        ) {
+            Logger.DEBUG.print("Writing " + file, this.getClass(), this);
             write(out, this);
 
         } catch (IOException ex) {
@@ -384,5 +390,15 @@ public interface Storable {
         return new Color4f(
                 in.readFloat(), in.readFloat(), in.readFloat(), in.readFloat()
         );
+    }
+
+    static void writeVector3fx(DataOutputStream out, Vector3fxc v) throws IOException {
+        out.writeInt(v.xBits());
+        out.writeInt(v.yBits());
+        out.writeInt(v.zBits());
+    }
+
+    static Vector3fx readVector3fx(DataInputStream in) throws IOException {
+        return Vector3fx.getWithBits(in.readInt(), in.readInt(), in.readInt());
     }
 }

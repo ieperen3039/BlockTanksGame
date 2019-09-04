@@ -11,12 +11,18 @@ import NG.Entities.MovingEntity;
 import NG.Entities.MutableState;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Storable;
 import NG.Tools.Logger;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -74,19 +80,14 @@ public class BlocksConstruction implements MovingEntity {
     }
 
     @Override
-    public BoundingBox getBoundingBox() {
-        if (subgrids.isEmpty()) return new BoundingBox();
+    public BoundingBox getHitbox() {
+        BoundingBox box = new BoundingBox();
 
-        return new BoundingBox( // TODO calculate hitbox including rotation and subgrids
-                50, 50, 50, 50, 50, 50
-//                bounds.xMin * BLOCK_BASE,
-//                bounds.yMin * BLOCK_BASE,
-//                bounds.zMin * BLOCK_HEIGHT,
-//
-//                bounds.xMax * BLOCK_BASE,
-//                bounds.yMax * BLOCK_BASE,
-//                bounds.zMax * BLOCK_HEIGHT
-        );
+        for (BlockSubGrid subgrid : subgrids) {
+            box.union(subgrid.getHitBox());
+        }
+
+        return box;
     }
 
     @Override
@@ -94,8 +95,12 @@ public class BlocksConstruction implements MovingEntity {
         Collision intersection = Collision.NONE;
 
         for (BlockSubGrid subgrid : subgrids) {
+            Quaternionf rotationInv = subgrid.getWorldRotation().invert();
+            Vector3fc localOrg = new Vector3f(origin).rotate(rotationInv);
+            Vector3fc localDir = new Vector3f(direction).rotate(rotationInv);
+
             Collision next = subgrid.getRayScanner()
-                    .getIntersection(origin, direction, false);
+                    .getIntersection(localOrg, localDir, false);
 
             if (next.isEarlierThan(intersection)) {
                 intersection = next;
@@ -128,6 +133,49 @@ public class BlocksConstruction implements MovingEntity {
     @Override
     public boolean isDisposed() {
         return isDisposed;
+    }
+
+    @Override
+    public void writeToDataStream(DataOutputStream out) throws IOException {
+        HashMap<PieceType, Integer> types = new HashMap<>();
+
+        for (BlockSubGrid subgrid : subgrids) {
+            for (AbstractPiece piece : subgrid) {
+                PieceType type = piece.getType();
+                types.computeIfAbsent(type, t -> types.size());
+            }
+        }
+
+        PieceType[] sorted = new PieceType[types.size()];
+        types.forEach((v, i) -> sorted[i] = v);
+
+        out.writeInt(sorted.length);
+        for (PieceType type : sorted) {
+            out.writeUTF(type.name);
+        }
+
+        Storable.write(out, state);
+        out.writeInt(subgrids.size());
+        for (BlockSubGrid s : subgrids) {
+            s.writeToDataStream(out, types);
+        }
+    }
+
+    public BlocksConstruction(DataInputStream in) throws IOException, ClassNotFoundException {
+        int nrOfTypes = in.readInt();
+        PieceType[] typeMap = new PieceType[nrOfTypes];
+        for (int i = 0; i < nrOfTypes; i++) {
+            String pieceName = in.readUTF();
+            // TODO maybe add manufacturer or include list of PieceTypeCollections
+            typeMap[i] = PieceTypeCollection.cheatCache.get(pieceName);
+        }
+
+        state = Storable.read(in, State.class);
+        int nrOfGrids = in.readInt();
+        subgrids = new ArrayList<>(nrOfGrids);
+        for (int i = 0; i < nrOfGrids; i++) {
+            subgrids.add(new BlockSubGrid(in, typeMap));
+        }
     }
 
     public class GridModificator {
@@ -168,7 +216,7 @@ public class BlocksConstruction implements MovingEntity {
                 List<WheelPiece> wheels = wheelBaseBlock.getWheels();
                 Logger.DEBUG.printf("Adding %s wheels", wheels.size());
 
-                PieceTypeWheel wheel = (PieceTypeWheel) FilePieceTypeCollection.cheatCache.get("Wheel small");
+                PieceTypeWheel wheel = (PieceTypeWheel) PieceTypeCollection.cheatCache.get("Wheel small");
 
                 for (int i = 0; i < wheels.size(); i++) {
                     wheels.add(i, wheel.getInstance(Color4f.WHITE));
@@ -200,5 +248,4 @@ public class BlocksConstruction implements MovingEntity {
             return target;
         }
     }
-
 }

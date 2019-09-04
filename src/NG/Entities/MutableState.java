@@ -2,11 +2,16 @@ package NG.Entities;
 
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
+import NG.Storable;
 import NG.Tools.Toolbox;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * Describes the state of an entity. Simply put, this describes the position and velocity at a given time
@@ -36,8 +41,9 @@ public class MutableState implements State {
     public MutableState(float time, Vector3fxc position) {
         this.time = time;
         this.position = new Vector3fx(position);
-        this.orientation = new Quaternionf();
         this.velocity = new Vector3f();
+        this.orientation = new Quaternionf();
+        this.rotationSpeed = new Quaternionf();
     }
 
     /**
@@ -91,7 +97,13 @@ public class MutableState implements State {
         position.set(source.position());
         velocity.set(source.velocity());
         orientation.set(source.orientation());
-        rotationSpeed = new Quaternionf();
+
+        if (source instanceof MutableState) {
+            MutableState ms = (MutableState) source;
+            rotationSpeed = ms.rotationSpeed;
+        } else {
+            rotationSpeed = new Quaternionf();
+        }
     }
 
     /**
@@ -126,5 +138,22 @@ public class MutableState implements State {
         Vector3f v = new Vector3f(velocity).lerp(other.velocity(), fraction);
 
         return new MutableState(gameTime, p, v, orientation, rotationSpeed);
+    }
+
+    @Override
+    public void writeToDataStream(DataOutputStream out) throws IOException {
+        Storable.writeVector3fx(out, position);
+        Storable.writeVector3f(out, velocity);
+        Storable.writeQuaternionf(out, orientation);
+        Storable.writeQuaternionf(out, rotationSpeed);
+        out.writeFloat(time);
+    }
+
+    public MutableState(DataInputStream in) throws IOException {
+        position = Storable.readVector3fx(in);
+        velocity = Storable.readVector3f(in);
+        orientation = Storable.readQuaternionf(in);
+        rotationSpeed = Storable.readQuaternionf(in);
+        time = in.readFloat();
     }
 }

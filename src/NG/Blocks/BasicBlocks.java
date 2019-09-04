@@ -81,6 +81,8 @@ public class BasicBlocks implements PieceTypeCollection {
                 xSize * ySize * zSize, Arrays.asList(connections), nrOfStuds
         );
         cache.put(size, newBlock);
+        cheatCache.put(newBlock.name, newBlock); // TODO remove
+
         return newBlock;
     }
 

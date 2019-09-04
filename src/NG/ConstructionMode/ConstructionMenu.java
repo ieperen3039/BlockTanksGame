@@ -6,7 +6,7 @@ import NG.Blocks.PieceTypeCollection;
 import NG.Blocks.Types.AbstractPiece;
 import NG.Blocks.Types.PieceType;
 import NG.Camera.Camera;
-import NG.CollisionDetection.BoundingBox;
+import NG.Camera.DummyEntity;
 import NG.CollisionDetection.GameState;
 import NG.Core.Game;
 import NG.DataStructures.Generic.Color4f;
@@ -15,12 +15,16 @@ import NG.GUIMenu.Components.*;
 import NG.GUIMenu.SimpleHUD;
 import NG.InputHandling.KeyPressListener;
 import NG.InputHandling.MouseToolCallbacks;
+import NG.Rendering.GLFWWindow;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Settings.KeyBinding;
+import NG.Storable;
+import NG.Tools.Directory;
 import NG.Tools.Logger;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.File;
 import java.util.Collection;
 
 /**
@@ -28,7 +32,7 @@ import java.util.Collection;
  */
 public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     private static final int NUM_SHOWN_ELTS = 10;
-    public static final Color4f SELECTION_COLOR = new Color4f(1f, 1f, 1f, 0.5f);
+    public static final Color4f SELECTION_COLOR = new Color4f(1f, 1f, 1f, 0.4f);
     private BlocksConstruction construction;
     private BlocksConstruction.GridModificator modificator;
     private AbstractPiece currentBlock;
@@ -99,53 +103,75 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     private SComponent getMenu() {
         SButton.BProps bProps = new SButton.BProps(300, 80, false, false);
 
-        return SPanel.row(
+        File constructionSaveFile = Directory.constructions.getFile("temp.conbi");
+        SFrame menuFrame = new SFrame("Menu");
+        SPanel mainPanel = SPanel.row(
                 SFiller.get(),
                 SPanel.column(
                         SFiller.get(),
-                        new SButton("Save", () -> saveConstruction(construction, "temp.conbi"), bProps),
+
+                        new SButton("Save", () -> {
+                            construction.writeToFile(constructionSaveFile);
+                            menuFrame.dispose();
+                        }, bProps),
+
+                        new SButton("Load", () -> {
+                            BlocksConstruction newConst = Storable.readFromFileRequired(constructionSaveFile, BlocksConstruction.class);
+                            setConstruction(newConst);
+                            menuFrame.dispose();
+                        }, bProps),
+
                         new SButton("Exit", () -> returnProcedure.run(), bProps),
+
                         SFiller.get()
                 ),
                 SFiller.get()
         );
-    }
+        menuFrame.setMainPanel(mainPanel);
+        menuFrame.pack();
+        menuFrame.validateLayout();
 
-    private void saveConstruction(BlocksConstruction construction, String fileName) {
-
+        GLFWWindow window = game.get(GLFWWindow.class);
+        menuFrame.setPosition(
+                window.getWidth() / 2 - menuFrame.getWidth() / 2,
+                window.getHeight() / 2 - menuFrame.getHeight() / 2
+        );
+        return menuFrame;
     }
 
     @Override
     public void init(Game game) throws Exception {
         super.init(game);
 
-        // override to include cursor block
-        construction = new BlocksConstruction() {
-            @Override
-            public void draw(SGL gl, float renderTime) {
-                super.draw(gl, renderTime);
-                if (currentBlock != null) {
-                    gl.pushMatrix();
-                    {
-                        BlockSubGrid g = modificator.getGrid();
-                        gl.translate(g.getWorldPosition());
-                        gl.rotate(g.getWorldRotation());
-                        currentBlock.draw(gl, null, renderTime);
-                    }
-                    gl.popMatrix();
-                }
-            }
+        setConstruction(new BlocksConstruction());
 
-            @Override
-            public BoundingBox getBoundingBox() {
-                return new BoundingBox(
-                        Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY,
-                        Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY
-                );
-            }
-        };
-        modificator = construction.getSubgridModificator();
+        game.get(GameState.class).addEntity(
+                new DummyEntity() {
+                    @Override
+                    public void draw(SGL gl, float renderTime) {
+                        if (currentBlock != null) {
+                            gl.pushMatrix();
+                            {
+                                BlockSubGrid g = modificator.getGrid();
+                                gl.translate(g.getWorldPosition());
+                                gl.rotate(g.getWorldRotation());
+                                currentBlock.draw(gl, this, renderTime);
+                            }
+                            gl.popMatrix();
+                        }
+                    }
+                }
+        );
+
         game.get(MouseToolCallbacks.class).addKeyPressListener(this);
+    }
+
+    public void setConstruction(BlocksConstruction construction) {
+        if (this.construction != null) {
+            this.construction.dispose();
+        }
+        this.construction = construction;
+        modificator = construction.getSubgridModificator();
         game.get(GameState.class).addEntity(construction);
     }
 

@@ -3,11 +3,13 @@ package NG.Blocks.Types;
 import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Storable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.AbstractList;
@@ -23,7 +25,7 @@ public class WheelBasePiece extends AbstractPiece {
     private PieceTypeHinge type;
 
     public WheelBasePiece(PieceTypeHinge type, Vector3ic position, int rotation, Color4f color) {
-        super(position, rotation, color, type.getConnections().size());
+        super(position, rotation, color);
         this.type = type;
 
         int nrOfHinges = type.hingeOffsets.size();
@@ -62,10 +64,32 @@ public class WheelBasePiece extends AbstractPiece {
     }
 
     @Override
-    public void writeToDataStream(
-            DataOutputStream out, Map<PieceType, Integer> typeMap
-    ) throws IOException {
-        throw new UnsupportedOperationException();
+    public void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        out.writeInt(typeMap.get(type));
+
+        out.writeInt(hinges.size());
+        for (Hinge h : hinges) {
+            Storable.writeVector3f(out, h.offset);
+            out.writeInt(h.rotationAxis.x);
+            out.writeInt(h.rotationAxis.y);
+            out.writeInt(h.rotationAxis.z);
+            h.wheel.writeToDataStream(out, typeMap);
+        }
+    }
+
+    public WheelBasePiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+        super(in);
+        type = (PieceTypeHinge) typeMap[in.readInt()];
+
+        int nrOfHinges = in.readInt();
+        hinges = new ArrayList<>(nrOfHinges);
+        for (int i = 0; i < nrOfHinges; i++) {
+            hinges.add(new Hinge(
+                    Storable.readVector3f(in),
+                    in.readInt(), in.readInt(), in.readInt(),
+                    new WheelPiece(in, typeMap)
+            ));
+        }
     }
 
     /**
@@ -135,6 +159,15 @@ public class WheelBasePiece extends AbstractPiece {
                 //noinspection SuspiciousNameCombination
                 rotationAxis.set(-rotationAxis.y, rotationAxis.x, rotationAxis.z);
             }
+        }
+
+        /**
+         * for creation by input stream
+         */
+        private Hinge(Vector3f offset, int rx, int ry, int rz, WheelPiece wheel) {
+            this.offset = offset;
+            this.rotationAxis = new Vector3i(rx, ry, rz);
+            this.wheel = wheel;
         }
 
         public void draw(SGL gl, Entity entity, float renderTime) {

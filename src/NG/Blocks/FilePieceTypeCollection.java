@@ -25,8 +25,6 @@ import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
  * @author Geert van Ieperen created on 16-8-2019.
  */
 public class FilePieceTypeCollection implements PieceTypeCollection {
-    public static final Map<String, PieceType> cheatCache = new HashMap<>(); // tracks all loaded piece types
-
     public static final float SCALE = 100;
     private static final int COLLISION_FACE_LIMIT = 200;
 

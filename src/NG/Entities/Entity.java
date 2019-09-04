@@ -4,6 +4,7 @@ import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.Core.GameTimer;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Storable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -14,7 +15,7 @@ import java.util.List;
  * An entity is anything that is in the world, excluding the ground itself. Particles and other purely visual elements.
  * @author Geert van Ieperen. Created on 14-9-2018.
  */
-public interface Entity {
+public interface Entity extends Storable {
     /**
      * Draws this entity using the provided SGL object. This method may only be called from the rendering loop, and
      * should not change the internal representation of this object. Possible animations should be based on {@link
@@ -51,7 +52,7 @@ public interface Entity {
     /**
      * @return the relative (local-space) bounding box of this entity
      */
-    BoundingBox getBoundingBox();
+    BoundingBox getHitbox();
 
     /**
      * given a point on position {@code origin} and a direction of {@code direction}, calculates a collision with scalar

@@ -710,4 +710,12 @@ public class Vector3fx implements Vector3fxc {
     public int zBits() {
         return z;
     }
+
+    public static Vector3fx getWithBits(int xBit, int yBit, int zBit) {
+        Vector3fx v = new Vector3fx();
+        v.x = xBit;
+        v.y = yBit;
+        v.z = zBit;
+        return v;
+    }
 }

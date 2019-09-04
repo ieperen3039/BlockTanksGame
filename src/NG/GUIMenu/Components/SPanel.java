@@ -130,6 +130,7 @@ public class SPanel extends SContainer {
             newPanel.add(components[i], new Vector2i(0, i));
         }
 
+        newPanel.setSize(0,0);
         return newPanel;
     }
 
@@ -156,6 +157,7 @@ public class SPanel extends SContainer {
             newPanel.add(components[i], new Vector2i(i, 0));
         }
 
+        newPanel.setSize(0,0);
         return newPanel;
     }
 

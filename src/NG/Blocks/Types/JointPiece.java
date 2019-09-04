@@ -5,6 +5,7 @@ import NG.DataStructures.Generic.Color4f;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -18,7 +19,7 @@ public class JointPiece extends AbstractPiece {
     private BlockSubGrid subgrid;
 
     JointPiece(PieceTypeJoint type, Vector3ic position, int rotation, Color4f color) {
-        super(position, rotation, color, type.getConnections().size());
+        super(position, rotation, color);
         this.type = type;
         axis = new Vector3i(type.axis);
 
@@ -50,8 +51,13 @@ public class JointPiece extends AbstractPiece {
     }
 
     @Override
-    public void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
-        throw new UnsupportedOperationException();
+    public void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        out.writeInt(typeMap.get(type));
+    }
+
+    public JointPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+        super(in);
+        type = (PieceTypeJoint) typeMap[in.readInt()];
     }
 
     public Vector3ic getAxis() {

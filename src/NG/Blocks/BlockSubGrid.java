@@ -8,10 +8,12 @@ import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.AABBi;
 import NG.Entities.Entity;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Storable;
 import NG.Tools.GridRayScanner;
 import NG.Tools.Logger;
 import org.joml.*;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Math;
@@ -26,9 +28,9 @@ import static NG.Blocks.Types.AbstractPiece.BLOCK_HEIGHT;
 public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     private static final int BUCKET_SIZE = 5;
     private static final float TAU = (float) Math.PI * 2;
-    protected BucketGrid3i<AbstractPiece> blocks = new BucketGrid3i<>(BUCKET_SIZE);
-    protected AABBi bounds = new AABBi();
-    protected float totalMass = 0;
+    protected BucketGrid3i<AbstractPiece> blocks;
+    protected AABBi bounds;
+    protected float totalMass;
 
     private Quaternionf rotation;
     private Float minAngle = null;
@@ -43,6 +45,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
 
     public BlockSubGrid() {
         rotation = new Quaternionf();
+        clear();
     }
 
     public boolean add(AbstractPiece block) {
@@ -191,11 +194,48 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     }
 
     public void writeToDataStream(DataOutputStream out, HashMap<PieceType, Integer> typeMap) throws IOException {
+        Storable.writeQuaternionf(out, rotation);
 
         out.writeInt(blocks.size());
         for (AbstractPiece s : blocks) {
+            Storable.writeClass(out, s.getClass());
             s.writeToDataStream(out, typeMap);
         }
+    }
+
+    public BlockSubGrid(DataInputStream in, PieceType[] typeMap) throws IOException {
+        rotation = Storable.readQuaternionf(in);
+        clear();
+
+        int nrOfBlocks = in.readInt();
+        try {
+            for (int i = 0; i < nrOfBlocks; i++) {
+                // not the most beautiful, but robust enough
+                AbstractPiece piece = Storable.readClass(in, AbstractPiece.class)
+                        .getConstructor(DataInputStream.class, PieceType[].class)
+                        .newInstance(in, typeMap);
+                add(piece);
+            }
+        } catch (ReflectiveOperationException ex){
+            throw new IOException(ex);
+        }
+    }
+
+    public AABBf getHitBox() {
+        AABBf result = new AABBf();
+        Quaternionf rotation = getWorldRotation();
+
+        Vector3f point = new Vector3f();
+        result.union(point.set(bounds.xMin, bounds.yMin, bounds.zMin).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMin, bounds.zMin).rotate(rotation));
+        result.union(point.set(bounds.xMin, bounds.yMax, bounds.zMin).rotate(rotation));
+        result.union(point.set(bounds.xMin, bounds.yMin, bounds.zMax).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMin).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMin, bounds.zMax).rotate(rotation));
+        result.union(point.set(bounds.xMin, bounds.yMax, bounds.zMax).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMax).rotate(rotation));
+
+        return result;
     }
 
     public GridRayScanner getRayScanner() {

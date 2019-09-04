@@ -8,6 +8,7 @@ import NG.Rendering.Shaders.MaterialShader;
 import NG.Rendering.Shaders.ShaderProgram;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class WheelPiece extends AbstractPiece {
     private float rotSpeed;
 
     WheelPiece(PieceTypeWheel type, Vector3ic position, Color4f color) {
-        super(position, 0, color, type.getConnections().size());
+        super(position, 0, color);
         this.type = type;
 //        rotSpeed = 0;
         rotSpeed = 1f;
@@ -40,9 +41,16 @@ public class WheelPiece extends AbstractPiece {
         return type;
     }
 
+
     @Override
-    public void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
-        throw new UnsupportedOperationException();
+    public void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        out.writeInt(typeMap.get(type));
+    }
+
+    public WheelPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+        super(in);
+        type = (PieceTypeWheel) typeMap[in.readInt()];
+        rotSpeed = 0;
     }
 
     @Override

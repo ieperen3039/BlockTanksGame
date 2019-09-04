@@ -11,16 +11,16 @@ import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Rendering.Shaders.MaterialShader;
 import NG.Rendering.Shaders.ShaderProgram;
+import NG.Storable;
 import NG.Tools.Directory;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntConsumer;
@@ -35,16 +35,14 @@ public abstract class AbstractPiece {
     public static final float BLOCK_HEIGHT = 0.32f;
     private static final MeshFile STUD = MeshFile.loadFileRequired(Directory.meshes.getPath("stud.ply"));
     protected final Vector3i position;
-    protected final AbstractPiece[] connections;
     private AABBi hitbox = null;
     private static Mesh STUD_MESH = null;
     public Color4f color;
     protected byte rotation;
 
-    AbstractPiece(Vector3ic position, int zRotation, Color4f color, int nrOfConnections) {
+    AbstractPiece(Vector3ic position, int zRotation, Color4f color) {
         this.position = new Vector3i(position);
         this.rotation = (byte) zRotation;
-        this.connections = new AbstractPiece[nrOfConnections];
         this.color = color;
     }
 
@@ -89,19 +87,12 @@ public abstract class AbstractPiece {
 
     /**
      * Draw the actual element. Overriding classes can use this to add additional details
-     * @param gl     the gl object, positioned and rotated as this block
-     * @param entity the entity this block is part of
+     * @param gl         the gl object, positioned and rotated as this block
+     * @param entity     the entity this block is part of
      * @param renderTime
      */
     protected void drawPiece(SGL gl, Entity entity, float renderTime) {
         getType().draw(gl, entity);
-    }
-
-    /**
-     * @return all connected blocks.
-     */
-    public Collection<AbstractPiece> getConnected() {
-        return Arrays.asList(connections);
     }
 
     /**
@@ -178,17 +169,6 @@ public abstract class AbstractPiece {
         return getType().hitbox.getIntersection(origin, direction);
     }
 
-    /**
-     * connects the given block at its current position to this block. If the block is not adjacent, nothing happens.
-     * The given block may not intersect the current block. A similar call to {@code other.connect(this)} must be made.
-     * @param other some other block
-     */
-    public void connect(AbstractPiece other) {
-        assert !intersects(other);
-
-        forEachConnection(other, connInd -> connections[connInd] = other);
-    }
-
     public boolean canConnect(AbstractPiece buildCursor) {
         boolean[] buffer = new boolean[]{false};
         forEachConnection(buildCursor, (i) -> buffer[0] = true);
@@ -231,12 +211,44 @@ public abstract class AbstractPiece {
 
     public abstract AbstractPiece copy();
 
-    public abstract void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException;
-
     private static void rotateQuarters(Vector3i vector, byte quarters) {
         for (byte i = 0; i < quarters; i++) {
             //noinspection SuspiciousNameCombination
             vector.set(-vector.y, vector.x, vector.z);
         }
+    }
+
+    /**
+     * writes this piece to the data output stream.
+     * @param out     the stream to write to
+     * @param typeMap a mapping from types to integers, such that types can be read from the stream with integers
+     * @throws IOException if something goes wrong while writing
+     */
+    public final void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+        out.writeInt(position.x);
+        out.writeInt(position.y);
+        out.writeInt(position.z);
+
+        out.writeByte(rotation);
+        Storable.writeColor(out, color);
+        write(out, typeMap);
+    }
+
+    /**
+     * writes data of implementing pieces to the stream. The complementary reading call must start with a call to {@link
+     * #AbstractPiece(DataInputStream)}
+     * @param out the stream to write to
+     * @param typeMap a mapping from types to integers
+     */
+    protected abstract void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException;
+
+    AbstractPiece(DataInputStream in) throws IOException {
+        this(
+                new Vector3i(
+                        in.readInt(), in.readInt(), in.readInt()
+                ),
+                in.readByte(),
+                Storable.readColor(in)
+        );
     }
 }

@@ -296,7 +296,7 @@ public class CollisionDetection {
 
             Entity entity = elt.entity;
 
-            float f = entity.getBoundingBox().intersectRay(origin, dir);
+            float f = entity.getHitbox().intersectRay(origin, dir);
             if (f < fraction) {
                 fraction = f;
                 suspect = entity;
@@ -426,7 +426,7 @@ public class CollisionDetection {
 
             Vector3fxc nextPos = entity.getCurrentState().position();
             BoundingBox prevBoundingBox = nextBoundingBox;
-            nextBoundingBox = entity.getBoundingBox().move(nextPos.toVector3f());
+            nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
 
             hitbox = prevBoundingBox.union(nextBoundingBox);
         }
@@ -437,7 +437,7 @@ public class CollisionDetection {
         public void update() {
             nextPoints = entity.getShapePoints(nextPoints);
             Vector3fxc nextPos = entity.getCurrentState().position();
-            nextBoundingBox = entity.getBoundingBox().move(nextPos.toVector3f());
+            nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
 
             hitbox = hitbox.union(nextBoundingBox);
         }

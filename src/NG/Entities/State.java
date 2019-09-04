@@ -1,13 +1,14 @@
 package NG.Entities;
 
 import NG.DataStructures.Vector3fxc;
+import NG.Storable;
 import org.joml.Quaternionf;
 import org.joml.Vector3fc;
 
 /**
  * @author Geert van Ieperen created on 26-7-2019.
  */
-public interface State {
+public interface State extends Storable {
     /**
      * @return a copy of this state
      */

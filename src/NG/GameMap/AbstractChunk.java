@@ -12,6 +12,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -36,7 +38,7 @@ public abstract class AbstractChunk extends StaticEntity implements MapChunk {
     }
 
     @Override
-    public BoundingBox getBoundingBox() {
+    public BoundingBox getHitbox() {
         return boundingBox;
     }
 
@@ -67,6 +69,11 @@ public abstract class AbstractChunk extends StaticEntity implements MapChunk {
         }
 
         return dest;
+    }
+
+    @Override
+    public void writeToDataStream(DataOutputStream out) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -70,7 +70,7 @@ public abstract class Projectile implements MovingEntity {
     }
 
     @Override
-    public BoundingBox getBoundingBox() {
+    public BoundingBox getHitbox() {
         return zeroBox;
     }
 

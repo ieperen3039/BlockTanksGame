@@ -3,11 +3,14 @@ package NG.Blocks;
 import NG.Blocks.Types.PieceType;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Geert van Ieperen created on 16-8-2019.
  */
 public interface PieceTypeCollection {
+    Map<String, PieceType> cheatCache = new HashMap<>(); // tracks all loaded piece types
 
     /**
      * @return the name that must be displayed as to identify this collection of block types

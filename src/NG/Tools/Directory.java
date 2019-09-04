@@ -21,7 +21,8 @@ public enum Directory {
     maps(true, "res", "maps"),
 
     mods(false, "Mods"),
-    blocks(true, "res", "blocks");
+    blocks(true, "res", "blocks"),
+    constructions(false, "Constructions");
 
     private static Path workingDirectory = null;
     private final Path directory; // relative path

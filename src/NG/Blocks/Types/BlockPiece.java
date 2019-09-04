@@ -1,8 +1,6 @@
 package NG.Blocks.Types;
 
 import NG.DataStructures.Generic.Color4f;
-import NG.Storable;
-import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
 import java.io.DataInputStream;
@@ -17,7 +15,7 @@ public class BlockPiece extends AbstractPiece {
     private PieceType type;
 
     protected BlockPiece(PieceType type, Vector3ic position, int zRotation, Color4f color) {
-        super(position, zRotation, color, type.getConnections().size());
+        super(position, zRotation, color);
         this.type = type;
     }
 
@@ -37,24 +35,12 @@ public class BlockPiece extends AbstractPiece {
     }
 
     @Override
-    public void writeToDataStream(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
+    public void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException {
         out.writeInt(typeMap.get(type));
-
-        out.writeInt(position.x);
-        out.writeInt(position.y);
-        out.writeInt(position.z);
-
-        out.writeByte(rotation);
-        Storable.writeColor(out, color);
     }
 
-    BlockPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
-        super(
-                new Vector3i(
-                        in.readInt(), in.readInt(), in.readInt()
-                ),
-                in.readByte(),
-                Storable.readColor(in), typeMap[in.readInt()].getConnections().size()
-        );
+    public BlockPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+        super(in);
+        type = typeMap[in.readInt()];
     }
 }

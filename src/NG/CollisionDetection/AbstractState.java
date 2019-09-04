@@ -44,7 +44,7 @@ public abstract class AbstractState implements GameState {
 
         entities().forEach(e -> {
             Vector3fxc position = e.getStateAt(rendertime).position();
-            BoundingBox box = e.getBoundingBox().move(position);
+            BoundingBox box = e.getHitbox().move(position);
 
             if (box.testFustrum(fic)) {
                 e.draw(gl, rendertime);

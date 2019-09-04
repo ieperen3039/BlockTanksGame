@@ -2,11 +2,16 @@ package NG.Entities;
 
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
+import NG.Storable;
 import NG.Tools.Toolbox;
 import NG.Tools.Vectors;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * @author Geert van Ieperen created on 27-7-2019.
@@ -92,5 +97,18 @@ public class FixedState implements State {
         Quaternionf or = new Quaternionf(orientation).nlerp(other.orientation(), fraction);
 
         return new MutableState(gameTime, pos, vel, or);
+    }
+
+    @Override
+    public void writeToDataStream(DataOutputStream out) throws IOException {
+        Storable.writeVector3fx(out, position);
+        Storable.writeQuaternionf(out, orientation);
+        out.writeFloat(time);
+    }
+
+    public FixedState(DataInputStream in) throws IOException {
+        position = Storable.readVector3fx(in);
+        orientation = Storable.readQuaternionf(in);
+        time = in.readFloat();
     }
 }
