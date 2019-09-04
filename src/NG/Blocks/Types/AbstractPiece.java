@@ -23,7 +23,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.IntConsumer;
 
 /**
  * @author Geert van Ieperen created on 2-9-2019.
@@ -47,7 +46,7 @@ public abstract class AbstractPiece {
     }
 
     /**
-     * draw this block
+     * draw this block, assuming the gl object has been set to the origin of the parenting grid
      */
     public void draw(SGL gl, Entity entity, float renderTime) {
         if (color.alpha == 0) return;
@@ -89,7 +88,7 @@ public abstract class AbstractPiece {
      * Draw the actual element. Overriding classes can use this to add additional details
      * @param gl         the gl object, positioned and rotated as this block
      * @param entity     the entity this block is part of
-     * @param renderTime
+     * @param renderTime the current 
      */
     protected void drawPiece(SGL gl, Entity entity, float renderTime) {
         getType().draw(gl, entity);
@@ -101,18 +100,11 @@ public abstract class AbstractPiece {
      */
     public void rotateZ(boolean clockwise) {
         rotation = (byte) Math.floorMod(rotation + (clockwise ? 1 : -1), 4);
-    }
-
-    public void setPosition(Vector3ic position) {
-        this.position.set(position);
-    }
-
-    public Vector3ic getPosition() {
-        return position;
+        recalculateHitbox();
     }
 
     /**
-     * @param grid
+     * @param grid the subgrid where this piece is placed in
      * @return real-world position as if it were placed in the given subgrid
      */
     public Vector3f getWorldPosition(BlockSubGrid grid) {
@@ -125,12 +117,20 @@ public abstract class AbstractPiece {
         return localOffset.rotate(grid.getWorldRotation()).add(gPos);
     }
 
+    /**
+     * a grid-based hitbox of this block. This box is one smaller than size in each dimension.
+     * @return a box describing which gridpoints are covered by this block.
+     */
     public AABBi getHitBox() {
-        if (hitbox == null) hitbox = recalculateHitbox();
+        if (hitbox == null) recalculateHitbox();
         return hitbox;
     }
 
-    protected AABBi recalculateHitbox() {
+    /**
+     * recalculate the hitbox and set the {@link #hitbox} field accordingly.
+     * @see #getHitBox()
+     */
+    protected void recalculateHitbox() {
         Vector3i travel = new Vector3i(getType().size).sub(1, 1, 1);
         Vector3i virtualPos = new Vector3i(position);
 
@@ -148,9 +148,13 @@ public abstract class AbstractPiece {
         }
 
         rotateQuarters(travel, rotation);
-        return new AABBi(virtualPos, travel);
+        hitbox = new AABBi(virtualPos, travel);
     }
 
+    /**
+     * @param other another piece
+     * @return true iff this blocks intersects the given other block when these are placed in the SAME subgrid.
+     */
     public boolean intersects(AbstractPiece other) {
         return getHitBox().intersects(other.getHitBox());
     }
@@ -169,38 +173,49 @@ public abstract class AbstractPiece {
         return getType().hitbox.getIntersection(origin, direction);
     }
 
-    public boolean canConnect(AbstractPiece buildCursor) {
-        boolean[] buffer = new boolean[]{false};
-        forEachConnection(buildCursor, (i) -> buffer[0] = true);
-        return buffer[0];
-    }
-
-    private void forEachConnection(AbstractPiece other, IntConsumer action) {
-        List<Vector3ic> thisConnections = getType().getConnections();
+    /**
+     * checks whether this block can connect to the given other block using connection points. Does not check whether
+     * these blocks intersect, which can be checked with {@link #intersects(AbstractPiece)}
+     * @param other another piece
+     * @return true iff these blocks have at least one connection point in common.
+     */
+    public boolean canConnect(AbstractPiece other) {
+        List<Vector3ic> thisConnections = this.getType().getConnections();
         List<Vector3ic> otherConnections = other.getType().getConnections();
 
-        for (int i = 0; i < thisConnections.size(); i++) {
-            Vector3ic connection = thisConnections.get(i);
-
+        for (Vector3ic connection : thisConnections) {
             Vector3i p = new Vector3i(connection);
-            rotateQuarters(p, rotation);
-            p.add(position);
+            rotateQuarters(p, this.rotation);
+            p.add(this.position);
 
             for (Vector3ic oc : otherConnections) {
                 Vector3i q = new Vector3i(oc);
-                rotateQuarters(q, rotation);
+                rotateQuarters(q, other.rotation);
                 q.add(other.position);
 
                 if (p.equals(q)) {
-                    action.accept(i);
-                    break; // only inner loop
+                    return true;
                 }
             }
         }
+        return false;
+    }
+
+    public void setPosition(Vector3ic position) {
+        this.position.set(position);
+    }
+
+    public void setPosition(int x, int y, int z) {
+        this.position.set(x, y, z);
     }
 
     public void move(int x, int y, int z) {
         position.add(x, y, z);
+        recalculateHitbox();
+    }
+
+    public Vector3ic getPosition() {
+        return position;
     }
 
     public byte getRotationByte() {
@@ -237,7 +252,7 @@ public abstract class AbstractPiece {
     /**
      * writes data of implementing pieces to the stream. The complementary reading call must start with a call to {@link
      * #AbstractPiece(DataInputStream)}
-     * @param out the stream to write to
+     * @param out     the stream to write to
      * @param typeMap a mapping from types to integers
      */
     protected abstract void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException;

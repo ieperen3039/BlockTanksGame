@@ -6,10 +6,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,18 +22,20 @@ public class BasicBlocks implements PieceTypeCollection {
     public static final float BLOCK_BASE_H = BLOCK_BASE / 2;
 
     public static void generateDefaults() {
-        for (int x = 1; x <= 8; x *= 2) {
-            get(x, 3, 1);
-            for (int y = x; y <= 8; y *= 2) {
-                get(x, y, 1);
-                get(x, y, 3);
+        for (int l = 1; l <= 4; l *= 2) {
+            for (int h = l; h <= 8; h *= 2) {
+                get(l, h, 1);
+                get(l, h, 3);
             }
         }
-
-//        get(1, 1, 1);
+        get(1, 3, 1);
+        get(1, 3, 3);
+        get(2, 3, 1);
+        get(2, 3, 3);
+        get(2, 5, 1);
     }
 
-    public static PieceType get(Vector3i size) {
+    public static PieceType get(Vector3ic size) {
         return get(size.x(), size.y(), size.z(), size);
     }
 
@@ -45,8 +44,12 @@ public class BasicBlocks implements PieceTypeCollection {
         return get(xSize, ySize, zSize, size);
     }
 
-    private static PieceType get(int xSize, int ySize, int zSize, Vector3i size) {
+    private static PieceType get(int xSize, int ySize, int zSize, Vector3ic size) {
         if (cache.containsKey(size)) return cache.get(size);
+
+        if (zSize == 0) {
+            return getPlate(xSize, ySize);
+        }
 
         CustomShape block = new CustomShape(new Vector3f(BLOCK_BASE / 2, BLOCK_BASE / 2, BLOCK_HEIGHT / 2));
 
@@ -80,10 +83,35 @@ public class BasicBlocks implements PieceTypeCollection {
                 block.toMeshFile(), block.toShape(), size,
                 xSize * ySize * zSize, Arrays.asList(connections), nrOfStuds
         );
+
         cache.put(size, newBlock);
         cheatCache.put(newBlock.name, newBlock); // TODO remove
 
         return newBlock;
+    }
+
+    public static PieceType getPlate(int xSize, int ySize) {
+        CustomShape block = new CustomShape();
+        block.addQuad(
+                new Vector3f(xSize * BLOCK_BASE - BLOCK_BASE_H, ySize * BLOCK_BASE - BLOCK_BASE_H, 0),
+                new Vector3f(xSize * BLOCK_BASE - BLOCK_BASE_H, -BLOCK_BASE_H, 0),
+                new Vector3f(-BLOCK_BASE_H, ySize * BLOCK_BASE - BLOCK_BASE_H, 0),
+                new Vector3f(-BLOCK_BASE_H, -BLOCK_BASE_H, 0)
+        );
+        int nrOfStuds = xSize * ySize;
+        Vector3ic[] connections = new Vector3ic[nrOfStuds];
+        for (int x = 0; x < xSize; x++) {
+            for (int y = 0; y < ySize; y++) {
+                connections[x * ySize + y] = new Vector3i(x, y, 0);
+            }
+        }
+
+        // plates are not added to the cache
+        return new PieceType(
+                String.format("plate %dx%d", xSize, ySize),
+                block.toMeshFile(), block.toShape(), new Vector3i(xSize, ySize, 0),
+                xSize * ySize * 0.01f, Arrays.asList(connections), nrOfStuds
+        );
     }
 
     @Override
@@ -104,6 +132,8 @@ public class BasicBlocks implements PieceTypeCollection {
 
     @Override
     public Collection<PieceType> getBlocks() {
-        return cache.values();
+        List<PieceType> types = new ArrayList<>(cache.values());
+        types.sort(Comparator.comparing(t -> t.name));
+        return types;
     }
 }

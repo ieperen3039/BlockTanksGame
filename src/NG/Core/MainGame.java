@@ -19,6 +19,7 @@ import NG.GUIMenu.Frames.FrameGUIManager;
 import NG.GUIMenu.Frames.FrameManagerImpl;
 import NG.GUIMenu.HUDManager;
 import NG.GUIMenu.TankHUD;
+import NG.GameMap.EmptyMap;
 import NG.GameMap.GameMap;
 import NG.GameMap.MeshMap;
 import NG.InputHandling.ClickShader;
@@ -92,7 +93,7 @@ public class MainGame implements ModLoader {
             Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
             GameLights lights = new SingleShadowMapLights();
             GameState state = new PhysicsEngine();
-            GameMap map = new MeshMap(Directory.maps.getPath("map.obj"));
+            GameMap map = new EmptyMap();
             GameParticles particles = new GameParticles();
 
             game = new GameService(GAME_VERSION, mainThreadName, renderer,
@@ -249,12 +250,25 @@ public class MainGame implements ModLoader {
                         SPanel.column(
                                 SFiller.get(),
                                 new SButton("New Construction", () -> gameService.select(construction), bProps),
-                                new SButton("See Map", () -> gameService.select(game), bProps),
+                                new SButton("See Map", this::openGame, bProps),
                                 new SButton("Exit", renderer::stopLoop, bProps),
                                 SFiller.get()
                         ),
                         SFiller.get()
                 ));
         return frame;
+    }
+
+    private void openGame() {
+        gameService.select(game);
+        game.computeOnRenderThread(() -> {
+            MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"));
+            map.init(game);
+            GameMap original = game.get(GameMap.class);
+            game.add(map);
+            game.remove(original);
+            original.cleanup();
+            return null;
+        });
     }
 }

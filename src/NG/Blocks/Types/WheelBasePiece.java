@@ -6,7 +6,6 @@ import NG.Rendering.MatrixStack.SGL;
 import NG.Storable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
 import java.io.DataInputStream;
@@ -31,7 +30,7 @@ public class WheelBasePiece extends AbstractPiece {
         int nrOfHinges = type.hingeOffsets.size();
         this.hinges = new ArrayList<>(nrOfHinges);
         for (int i = 0; i < nrOfHinges; i++) {
-            hinges.add(new Hinge(type.hingeOffsets.get(i), type.axes.get(i), rotation));
+            hinges.add(new Hinge(type.hingeOffsets.get(i)));
         }
     }
 
@@ -41,15 +40,6 @@ public class WheelBasePiece extends AbstractPiece {
 
         for (Hinge hinge : hinges) {
             hinge.draw(gl, entity, renderTime);
-        }
-    }
-
-    @Override
-    public void rotateZ(boolean clockwise) {
-        super.rotateZ(clockwise);
-
-        for (Hinge hinge : hinges) {
-            hinge.rotateZ(clockwise);
         }
     }
 
@@ -70,9 +60,6 @@ public class WheelBasePiece extends AbstractPiece {
         out.writeInt(hinges.size());
         for (Hinge h : hinges) {
             Storable.writeVector3f(out, h.offset);
-            out.writeInt(h.rotationAxis.x);
-            out.writeInt(h.rotationAxis.y);
-            out.writeInt(h.rotationAxis.z);
             h.wheel.writeToDataStream(out, typeMap);
         }
     }
@@ -86,7 +73,6 @@ public class WheelBasePiece extends AbstractPiece {
         for (int i = 0; i < nrOfHinges; i++) {
             hinges.add(new Hinge(
                     Storable.readVector3f(in),
-                    in.readInt(), in.readInt(), in.readInt(),
                     new WheelPiece(in, typeMap)
             ));
         }
@@ -144,29 +130,20 @@ public class WheelBasePiece extends AbstractPiece {
 
     private static class Hinge {
         private final Vector3fc offset;
-        private final Vector3i rotationAxis;
         private WheelPiece wheel;
 
         /**
          * @param offset the offset of the wheel, relative to the parent block
-         * @param axis the axis around which the wheel rotates
-         * @param rotation the rotation of the parent block
          */
-        public Hinge(Vector3fc offset, Vector3ic axis, int rotation) {
+        public Hinge(Vector3fc offset) {
             this.offset = new Vector3f(offset).sub(BLOCK_BASE/2, BLOCK_BASE/2, 0); // negate translation to stud;
-            this.rotationAxis = new Vector3i(axis);
-            for (byte i = 0; i < (rotation + 1) % 4; i++) { // + 1 is for cross product of Z and axis
-                //noinspection SuspiciousNameCombination
-                rotationAxis.set(-rotationAxis.y, rotationAxis.x, rotationAxis.z);
-            }
         }
 
         /**
          * for creation by input stream
          */
-        private Hinge(Vector3f offset, int rx, int ry, int rz, WheelPiece wheel) {
+        private Hinge(Vector3f offset, WheelPiece wheel) {
             this.offset = offset;
-            this.rotationAxis = new Vector3i(rx, ry, rz);
             this.wheel = wheel;
         }
 
@@ -175,21 +152,11 @@ public class WheelBasePiece extends AbstractPiece {
             gl.pushMatrix();
             {
                 gl.translate(offset);
-                gl.rotateQuarter(rotationAxis.x, rotationAxis.y, rotationAxis.z);
+                gl.rotateQuarter(0, 1, 0);
 
                 wheel.draw(gl, entity, renderTime);
             }
             gl.popMatrix();
-        }
-
-        public void rotateZ(boolean up) {
-            if (up) {
-                //noinspection SuspiciousNameCombination
-                rotationAxis.set(-rotationAxis.y, rotationAxis.x, rotationAxis.z);
-            } else {
-                //noinspection SuspiciousNameCombination
-                rotationAxis.set(rotationAxis.y, -rotationAxis.x, rotationAxis.z);
-            }
         }
     }
 

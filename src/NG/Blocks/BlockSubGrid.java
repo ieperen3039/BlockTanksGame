@@ -167,7 +167,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         // none may overlap
         for (AbstractPiece block : nearbyBlocks) {
             if (block.intersects(element)) {
-                Logger.DEBUG.print("Block " + element + " overlaps with " + block);
+                Logger.DEBUG.printf("%s overlaps with %s", element, block);
                 return false;
             }
         }
@@ -176,7 +176,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
             if (block.canConnect(element)) return true;
         }
 
-        Logger.DEBUG.print("Block does not connect");
+        Logger.DEBUG.printf("%s does not connect", element);
         return false;
     }
 
