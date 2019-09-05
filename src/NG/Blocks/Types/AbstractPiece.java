@@ -32,6 +32,8 @@ public abstract class AbstractPiece {
     /* size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final float BLOCK_BASE = 0.8f;
     public static final float BLOCK_HEIGHT = 0.32f;
+    public static final Vector3f BLOCK_SIZE = new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT);
+
     private static final MeshFile STUD = MeshFile.loadFileRequired(Directory.meshes.getPath("stud.ply"));
     protected final Vector3i position;
     private AABBi hitbox = null;
@@ -88,7 +90,7 @@ public abstract class AbstractPiece {
      * Draw the actual element. Overriding classes can use this to add additional details
      * @param gl         the gl object, positioned and rotated as this block
      * @param entity     the entity this block is part of
-     * @param renderTime the current 
+     * @param renderTime the current
      */
     protected void drawPiece(SGL gl, Entity entity, float renderTime) {
         getType().draw(gl, entity);

@@ -96,7 +96,7 @@ public interface Game extends Iterable<Object> {
             try {
                 return action.call();
 
-            } catch (Exception ex) {
+            } catch (Exception | AssertionError ex) {
                 Logger.ERROR.print(ex);
                 return null;
             }

@@ -1,9 +1,9 @@
 package NG.GameMap;
 
 import NG.Camera.Camera;
-import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.Core.Game;
+import NG.DataStructures.Generic.AABBi;
 import NG.DataStructures.Generic.AveragingQueue;
 import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
@@ -22,113 +22,105 @@ import NG.Tools.Vectors;
 import org.joml.*;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
 import java.util.*;
+
+import static NG.Blocks.FilePieceTypeCollection.SCALE;
 
 /**
  * @author Geert van Ieperen created on 8-8-2019.
  */
 public class MeshMap extends AbstractMap {
-    private static final float MESH_TILE_SIZE = 20; // at least 5 times as big as the planes of the map, preferably bigger
+    private static final float MESH_TILE_SIZE = 15; // at least 5 times as big as the planes of the map, preferably bigger
     private static final Vector3fc TILE_SIZE_VEC = new Vector3f(MESH_TILE_SIZE, MESH_TILE_SIZE, MESH_TILE_SIZE);
-    private final MapChunk[][][] grid;
-    private Vector3i size;
-    private final BoundingBox boundingBox;
+    private MapChunk[][][] grid;
+    private AABBi gridRange;
+    private Vector3ic coordOffset;
+    private Vector3ic size;
     private Game game;
     private AveragingQueue culledChunks = new AveragingQueue(2);
-    private Path binaryFile;
+    private File binaryFile;
 
-    public MeshMap(Path path) throws IOException {
+    public MeshMap(Path path, boolean alwaysReload) throws IOException {
         String fullName = path.getFileName().toString();
         String baseName = fullName.substring(0, fullName.lastIndexOf('.'));
-        binaryFile = path.getParent().resolve(baseName + ".mesbi");
+        binaryFile = path.getParent().resolve(baseName + ".mesbi").toFile();
 
-//        Files.delete(binaryFile); // DEBUG - RELOADS THE MAP FROM SCRATCH
+        if (!alwaysReload && binaryFile.exists()) {
+            try (DataInputStream in = Storable.getInputStream(binaryFile)){
+                readFromDataStream(in);
+                return;
 
-        if (Files.exists(binaryFile)) {
-            DataInputStream in = Storable.getInputStream(binaryFile);
-
-            size = new Vector3i(in.readInt(), in.readInt(), in.readInt());
-            boundingBox = new BoundingBox(
-                    in.readFloat(), in.readFloat(), in.readFloat(),
-                    in.readFloat(), in.readFloat(), in.readFloat()
-            );
-
-            grid = new MapChunk[size.x][size.y][size.z];
-
-            int nrOfChunks = in.readInt();
-            for (int i = 0; i < nrOfChunks; i++) {
-                int x = in.readInt();
-                int y = in.readInt();
-                int z = in.readInt();
-                MeshFile file = new MeshFile(in);
-                grid[x][y][z] = new MeshChunk(this, x, y, z, file);
+            } catch (Throwable ex){
+                Logger.DEBUG.print("Reading mesbi file caused an " + ex.getClass().getSimpleName());
             }
-            in.close();
+        }
 
-        } else {
-            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(binaryFile.toFile()), 1024 * 1024));
-            Logger.INFO.print("Creating binary of " + path.getFileName() + "...");
+        DataOutputStream out = Storable.getOutputStream(binaryFile);
+        Logger.INFO.print("Creating binary of " + path.getFileName() + "...");
 
-            MeshFile file = MeshFile.loadFile(path);
-            Logger.DEBUG.print("Loaded map with " + file.getFaces().size() + " planes");
+        MeshFile file = MeshFile.loadFile(path, Vectors.O, new Vector3f(SCALE, SCALE, SCALE));
+        Logger.DEBUG.print("Loaded map with " + file.getFaces().size() + " planes");
 
-            HashMap<Vector3i, CustomShape> shapes = file.splitToShapes(MESH_TILE_SIZE, true);
-            int nrOfChunks = shapes.size();
-            Logger.DEBUG.print("Divided map in " + nrOfChunks + " chunks");
+        HashMap<Vector3i, CustomShape> shapes = file.splitToShapes(MESH_TILE_SIZE, true);
+        int nrOfChunks = shapes.size();
+        Logger.DEBUG.print("Divided map in " + nrOfChunks + " chunks");
 
-            boundingBox = new BoundingBox();
-            for (Vector3fc v : file.getVertices()) {
-                boundingBox.union(v);
-            }
+        Vector3i min = new Vector3i();
+        Vector3i max = new Vector3i();
+        for (Vector3i v : shapes.keySet()) {
+            max.max(v);
+            min.min(v);
+        }
 
-            Vector3i min = new Vector3i();
-            Vector3i max = new Vector3i();
-            for (Vector3i v : shapes.keySet()) {
-                max.max(v);
-                min.min(v);
-            }
+        coordOffset = min;
+        out.writeInt(min.x);
+        out.writeInt(min.y);
+        out.writeInt(min.z);
 
-            size = new Vector3i(max).add(1, 1, 1).sub(min);
-            out.writeInt(size.x);
-            out.writeInt(size.y);
-            out.writeInt(size.z);
+        size = new Vector3i(max).add(1, 1, 1).sub(min);
+        out.writeInt(size.x());
+        out.writeInt(size.y());
+        out.writeInt(size.z());
 
-            out.writeFloat(boundingBox.minX);
-            out.writeFloat(boundingBox.minY);
-            out.writeFloat(boundingBox.minZ);
-            out.writeFloat(boundingBox.maxX);
-            out.writeFloat(boundingBox.maxY);
-            out.writeFloat(boundingBox.maxZ);
+        grid = new MapChunk[size.x()][size.y()][size.z()];
+        gridRange = new AABBi(0, 0, 0, size.x() - 1, size.y() - 1, size.z() - 1);
 
-            grid = new MapChunk[size.x][size.y][size.z];
+        out.writeInt(nrOfChunks);
+        for (Map.Entry<Vector3i, CustomShape> entry : shapes.entrySet()) {
+            Vector3i p = entry.getKey();
+            CustomShape s = entry.getValue();
+            int x = p.x - min.x;
+            int y = p.y - min.y;
+            int z = p.z - min.z;
+            MeshFile chunkMesh = s.toMeshFile();
 
-            Logger.DEBUG.print("Defined bounds and size, map is " + Vectors.toString(boundingBox.size()) + " in size");
+            out.writeInt(x);
+            out.writeInt(y);
+            out.writeInt(z);
+            chunkMesh.writeToDataStream(out);
 
+            grid[x][y][z] = new MeshChunk(this, x, y, z, chunkMesh);
+        }
 
-            out.writeInt(nrOfChunks);
-            int i = 1;
-            for (Map.Entry<Vector3i, CustomShape> entry : shapes.entrySet()) {
-                Vector3i p = entry.getKey();
-                CustomShape s = entry.getValue();
-                int x = p.x - min.x;
-                int y = p.y - min.y;
-                int z = p.z - min.z;
-                MeshFile chunkMesh = s.toMeshFile();
+        out.close();
+        Logger.DEBUG.print("Done loading map, created file " + binaryFile + " of " + out.size() / 1024 + " kB");
+    }
 
-                out.writeInt(x);
-                out.writeInt(y);
-                out.writeInt(z);
-                chunkMesh.writeToDataStream(out);
+    private void readFromDataStream(DataInputStream in) throws IOException {
+        coordOffset = new Vector3i(in.readInt(), in.readInt(), in.readInt());
+        size = new Vector3i(in.readInt(), in.readInt(), in.readInt());
+        grid = new MapChunk[size.x()][size.y()][size.z()];
+        gridRange = new AABBi(0, 0, 0, size.x() - 1, size.y() - 1, size.z() - 1);
 
-                grid[x][y][z] = new MeshChunk(this, x, y, z, chunkMesh);
-            }
-            Logger.DEBUG.newLine();
-
-            out.close();
-            Logger.DEBUG.print("Done loading map, created binary " + binaryFile + " of " + out.size() / 1024 + "kB");
+        int nrOfChunks = in.readInt();
+        for (int i = 0; i < nrOfChunks; i++) {
+            int x = in.readInt();
+            int y = in.readInt();
+            int z = in.readInt();
+            MeshFile file = new MeshFile(in);
+            grid[x][y][z] = new MeshChunk(this, x, y, z, file);
         }
     }
 
@@ -139,7 +131,7 @@ public class MeshMap extends AbstractMap {
 
     @Override
     protected Collision getTileIntersect(Vector3fc origin, Vector3fc direction, int xCoord, int yCoord, int zCoord) {
-        if (xCoord > size.x || yCoord > size.y || zCoord > size.z) return null;
+        if (!gridRange.contains(xCoord, yCoord, zCoord)) return Collision.NONE;
 
         MapChunk mapChunk = grid[xCoord][yCoord][zCoord];
         if (mapChunk == null) return Collision.NONE;
@@ -159,7 +151,7 @@ public class MeshMap extends AbstractMap {
 
     @Override
     public Collection<MapChunk> getChunks() {
-        int size = this.size.x * this.size.y * this.size.z;
+        int nrOfChunks = size.x() * size.y() * size.z();
 
         return new AbstractCollection<>() {
             @Override
@@ -169,7 +161,7 @@ public class MeshMap extends AbstractMap {
 
             @Override
             public int size() {
-                return size;
+                return nrOfChunks;
             }
         };
     }
@@ -177,18 +169,27 @@ public class MeshMap extends AbstractMap {
     @Override
     public Vector3i getCoordinate(float x, float y, float z) {
         return new Vector3i(
-                (int) ((x + boundingBox.minX) / MESH_TILE_SIZE),
-                (int) ((y + boundingBox.minY) / MESH_TILE_SIZE),
-                (int) ((z + boundingBox.minZ) / MESH_TILE_SIZE)
+                (int) (x / MESH_TILE_SIZE) - coordOffset.x(),
+                (int) (y / MESH_TILE_SIZE) - coordOffset.y(),
+                (int) (z / MESH_TILE_SIZE) - coordOffset.z()
+        );
+    }
+
+    @Override
+    protected Vector3f exactToCoordinate(float x, float y, float z) {
+        return new Vector3f(
+                (x / MESH_TILE_SIZE) - coordOffset.x(),
+                (y / MESH_TILE_SIZE) - coordOffset.y(),
+                (z / MESH_TILE_SIZE) - coordOffset.z()
         );
     }
 
     @Override
     public Vector3fx getPosition(int x, int y, int z) {
         return new Vector3fx(
-                (x + 0.5f) * MESH_TILE_SIZE - boundingBox.minX,
-                (y + 0.5f) * MESH_TILE_SIZE - boundingBox.minY,
-                (z + 0.5f) * MESH_TILE_SIZE - boundingBox.minZ
+                (x + coordOffset.x() + 0.5f) * MESH_TILE_SIZE,
+                (y + coordOffset.y() + 0.5f) * MESH_TILE_SIZE,
+                (z + coordOffset.z() + 0.5f) * MESH_TILE_SIZE
         );
     }
 
@@ -246,28 +247,13 @@ public class MeshMap extends AbstractMap {
     @Override
     public void writeToDataStream(DataOutputStream out) throws IOException {
         // transfer contents of the binary file
-        try (InputStream in = new FileInputStream(binaryFile.toFile())) {
+        try (InputStream in = new FileInputStream(binaryFile)) {
             in.transferTo(out);
         }
     }
 
     private MeshMap(DataInputStream in) throws IOException {
-        size = new Vector3i(in.readInt(), in.readInt(), in.readInt());
-        boundingBox = new BoundingBox(
-                in.readFloat(), in.readFloat(), in.readFloat(),
-                in.readFloat(), in.readFloat(), in.readFloat()
-        );
-
-        grid = new MapChunk[size.x][size.y][size.z];
-
-        int nrOfChunks = in.readInt();
-        for (int i = 0; i < nrOfChunks; i++) {
-            int x = in.readInt();
-            int y = in.readInt();
-            int z = in.readInt();
-            MeshFile file = new MeshFile(in);
-            grid[x][y][z] = new MeshChunk(this, x, y, z, file);
-        }
+        readFromDataStream(in);
     }
 
     private class ChunkItr implements Iterator<MapChunk> {
@@ -283,7 +269,7 @@ public class MeshMap extends AbstractMap {
 
         @Override
         public boolean hasNext() {
-            return x < size.x;
+            return x < size.x();
         }
 
         @Override
@@ -296,14 +282,14 @@ public class MeshMap extends AbstractMap {
         private void progress() {
             do {
                 z++;
-                if (z == size.z) {
+                if (z == size.z()) {
                     z = 0;
                     y++;
-                    if (y == size.y) {
+                    if (y == size.y()) {
                         y = 0;
                         x++;
                     }
-                    if (x == size.x) {
+                    if (x == size.x()) {
                         return;
 
                     } else {

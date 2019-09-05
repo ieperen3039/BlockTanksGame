@@ -185,7 +185,7 @@ public class CollisionDetection {
 
         if (!combined.isCollision()) return false;
 
-        float collisionTime = previousTime + combined.getScalar() * (previousTime - gameTime);
+        float collisionTime = previousTime + combined.getCollisionTime() * (previousTime - gameTime);
 
         a.collideWith(b, combined, collisionTime);
         b.collideWith(a, combined, collisionTime);

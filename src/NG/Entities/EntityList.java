@@ -32,7 +32,7 @@ public class EntityList extends AbstractState {
             }
         }
 
-        return new Pair<>(ety, earliest.getScalar());
+        return new Pair<>(ety, earliest.getCollisionTime());
     }
 
     @Override

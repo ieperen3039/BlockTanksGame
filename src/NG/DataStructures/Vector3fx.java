@@ -40,6 +40,7 @@ public class Vector3fx implements Vector3fxc {
      * @param source a floating-point vector
      */
     public Vector3fx(Vector3fc source) {
+        assert source != null;
         set(source);
     }
 
@@ -47,6 +48,7 @@ public class Vector3fx implements Vector3fxc {
      * Copies the given {@code Vector3fx}
      */
     public Vector3fx(Vector3fxc source) {
+        assert source != null;
         this.x = source.xBits();
         this.y = source.yBits();
         this.z = source.zBits();
@@ -57,6 +59,7 @@ public class Vector3fx implements Vector3fxc {
     }
 
     public Vector3fx(Vector3dc origin) {
+        assert origin != null;
         this.x = doubleToFixed(origin.x());
         this.y = doubleToFixed(origin.y());
         this.z = doubleToFixed(origin.z());

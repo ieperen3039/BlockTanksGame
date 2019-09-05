@@ -101,7 +101,7 @@ public class BucketGrid3i<T> implements Iterable<T> {
 
     public T get(int x, int y, int z) {
         for (Element elt : bucketOf(x, y, z)) {
-            if (elt.left.intersects(x, y, z)) {
+            if (elt.left.contains(x, y, z)) {
                 return elt.right;
             }
         }

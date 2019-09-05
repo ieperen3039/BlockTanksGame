@@ -2,6 +2,7 @@ package NG.GameMap;
 
 import NG.Core.GameAspect;
 import NG.DataStructures.Vector3fx;
+import NG.DataStructures.Vector3fxc;
 import NG.InputHandling.MouseTools.MouseToolListener;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Storable;
@@ -12,7 +13,10 @@ import org.joml.Vector3ic;
 import java.util.Collection;
 
 /**
- * @author Geert van Ieperen created on 5-5-2019.
+ * An object that represents the world where all other entities stand on. This includes both the graphical and the
+ * physical representation. The map considers a difference between coordinates and position, in that a coordinate may be
+ * of different magnitude than an equivalent position.
+ * @author Geert van Ieperen. Created on 29-9-2018.
  */
 public interface GameMap extends GameAspect, MouseToolListener, Storable {
 
@@ -20,16 +24,16 @@ public interface GameMap extends GameAspect, MouseToolListener, Storable {
      * maps a real position to the nearest coordinate.
      * @param position a position in real space
      * @return the coordinate that is closest to the given position.
-     * @see #getCoordinate(Vector3fc)
+     * @see #getCoordinate(Vector3fxc)
      */
-    Vector3i getCoordinate(Vector3fc position);
+    Vector3i getCoordinate(Vector3fxc position);
 
     Vector3i getCoordinate(float x, float y, float z);
 
     /**
      * maps a coordinate to a real position
      * @param mapCoord a coordinate on the map
-     * @return a vector such that {@link #getCoordinate(Vector3fc)} will result in {@code mapCoord}
+     * @return a vector such that {@link #getCoordinate(Vector3fxc)} will result in {@code mapCoord}
      */
     Vector3fx getPosition(Vector3ic mapCoord);
 

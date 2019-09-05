@@ -78,11 +78,11 @@ public class AABBi {
         return new Vector3i(xMax - xMin, yMax - yMin, zMax - zMin);
     }
 
-    public boolean intersects(Vector3ic position) {
-        return intersects(position.x(), position.y(), position.z());
+    public boolean contains(Vector3ic position) {
+        return contains(position.x(), position.y(), position.z());
     }
 
-    public boolean intersects(int x, int y, int z) {
+    public boolean contains(int x, int y, int z) {
         boolean xOk = this.xMin > x || this.xMax < x;
         boolean yOk = this.yMin > y || this.yMax < y;
         boolean zOk = this.zMin > z || this.zMax < z;
@@ -103,5 +103,13 @@ public class AABBi {
 
     private static String asMax(int max) {
         return max == Integer.MIN_VALUE ? "-" : Integer.toString(max);
+    }
+
+    public Vector3i getMinimum() {
+        return new Vector3i(xMin, yMin, zMin);
+    }
+
+    public Vector3i getMaximum() {
+        return new Vector3i(xMax, yMax, zMax);
     }
 }

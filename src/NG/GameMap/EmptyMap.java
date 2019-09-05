@@ -79,9 +79,12 @@ public class EmptyMap extends AbstractMap {
     }
 
     @Override
-    protected Collision getTileIntersect(
-            Vector3fc origin, Vector3fc direction, int xCoord, int yCoord, int zCoord
-    ) {
+    protected Collision getTileIntersect(Vector3fc origin, Vector3fc direction, int xCoord, int yCoord, int zCoord) {
         return Collision.NONE;
+    }
+
+    @Override
+    protected Vector3f exactToCoordinate(float x, float y, float z) {
+        return new Vector3f(x, y, z);
     }
 }

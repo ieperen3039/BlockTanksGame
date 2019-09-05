@@ -16,10 +16,14 @@ import static java.lang.Float.isNaN;
  * @author Geert van Ieperen. Created on 13-9-2018.
  */
 public final class Vectors {
-    public static final Vector3fc X = newX();
-    public static final Vector3fc Y = newY();
-    public static final Vector3fc Z = newZ();
-    public static final Vector3fc O = newZero();
+    public static final Vector3fc X = new Vector3f(1, 0, 0);
+    public static final Vector3fc Y = new Vector3f(0, 1, 0);
+    public static final Vector3fc Z = new Vector3f(0, 0, 1);
+    public static final Vector3fc NX = new Vector3f(-1, 0, 0);
+    public static final Vector3fc NY = new Vector3f(0, -1, 0);
+    public static final Vector3fc NZ = new Vector3f(0, 0, -1);
+    public static final Vector3fc O = new Vector3f(0, 0, 0);
+
     private static final float PI = (float) Math.PI;
     private static final float VECTOR_EQUALITY_DIST_SQ = 1e-6f;
 

@@ -240,9 +240,8 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
 
     public GridRayScanner getRayScanner() {
         return new GridRayScanner(
-                bounds.size(),
-                new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT),
-                new BlockIntersections()
+                bounds.getMinimum(), bounds.getMaximum(),
+                v -> v, new BlockIntersections()
         );
     }
 

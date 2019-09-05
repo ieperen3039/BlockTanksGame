@@ -4,13 +4,16 @@ import NG.Blocks.BasicBlocks;
 import NG.Blocks.FilePieceTypeCollection;
 import NG.Blocks.PieceTypeCollection;
 import NG.Camera.Camera;
+import NG.Camera.Cursor;
 import NG.Camera.PointCenteredCamera;
-import NG.Camera.StrategyCamera;
 import NG.CollisionDetection.GameState;
 import NG.CollisionDetection.PhysicsEngine;
 import NG.ConstructionMode.ConstructionMenu;
 import NG.DataStructures.Generic.Color4f;
+import NG.DataStructures.Vector3fx;
 import NG.Entities.EntityList;
+import NG.Entities.FixedState;
+import NG.Entities.MovingEntity;
 import NG.GUIMenu.Components.SButton;
 import NG.GUIMenu.Components.SFiller;
 import NG.GUIMenu.Components.SFrame;
@@ -37,8 +40,11 @@ import NG.Rendering.RenderLoop;
 import NG.Rendering.Shaders.PhongShader;
 import NG.Settings.KeyBinding;
 import NG.Settings.Settings;
+import NG.Storable;
 import NG.Tools.*;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -89,8 +95,8 @@ public class MainGame implements ModLoader {
             );
 
             HUDManager hud = new TankHUD();
-//            Camera camera = new StaticCamera(new Vector3f(20, 25, 10), Vectors.newZero(), Vectors.newZ());
-            Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
+//            Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
+            Camera camera = new PointCenteredCamera(new Vector3f(20, 20, 20), Vectors.newZero());
             GameLights lights = new SingleShadowMapLights();
             GameState state = new PhysicsEngine();
             GameMap map = new EmptyMap();
@@ -262,12 +268,24 @@ public class MainGame implements ModLoader {
     private void openGame() {
         gameService.select(game);
         game.computeOnRenderThread(() -> {
-            MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"));
+            MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"), game.get(Settings.class).DEBUG);
             map.init(game);
             GameMap original = game.get(GameMap.class);
             game.add(map);
             game.remove(original);
             original.cleanup();
+
+            MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("chart.conbi"), MovingEntity.class);
+            Vector3fc ePos = map.getGridScanner()
+                    .getIntersection(new Vector3f(0, 0, 100), Vectors.NZ, true)
+                    .getHitPos();
+            assert ePos != null;
+            entity.setState(new FixedState(new Vector3fx(ePos).add(0, 0, 10), new Quaternionf()));
+
+            GameState gameState = game.get(GameState.class);
+            gameState.addEntity(entity);
+            gameState.addEntity(new Cursor(entity::getCurrentState));
+            Logger.printOnline(() -> String.valueOf(entity.getCurrentState().position()));
             return null;
         });
     }

@@ -11,7 +11,6 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -371,12 +370,12 @@ public interface Storable {
         }
     }
 
-    static DataOutputStream getOutputStream(Path file) throws FileNotFoundException {
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file.toFile())));
+    static DataOutputStream getOutputStream(File file) throws FileNotFoundException {
+        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
     }
 
-    static DataInputStream getInputStream(Path file) throws FileNotFoundException {
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
+    static DataInputStream getInputStream(File file) throws FileNotFoundException {
+        return new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     }
 
     static void writeColor(DataOutputStream out, Color4f color) throws IOException {
