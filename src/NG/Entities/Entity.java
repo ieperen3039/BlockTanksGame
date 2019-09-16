@@ -27,27 +27,30 @@ public interface Entity extends Storable {
     void draw(SGL gl, float renderTime);
 
     /**
-     * updates the {@link #getCurrentState()} of this entity to the given gameTime
+     * applies physics updates and control updates to the {@link #getPhysicsState()} of this entity until the given gameTime
      * @param gameTime the current game time
      * @see State#update(float)
      */
-    void update(float gameTime);
+    void preUpdate(float gameTime);
 
     /**
-     * @return the state of this entity at the latest physics update
+     * confirms the current state as final
      */
-    State getCurrentState();
+    void postUpdate();
 
     /**
      * get the state of this entity on the given moment in time, interpolating and extrapolating linearly when
      * necessary. The resulting state is only defined if {@code gameTime} is less than that of {@link
-     * #getCurrentState()}{@link State#time() .time()}
+     * #getPhysicsState()}{@link State#time() .time()}
      * @param gameTime the time where the state must be queried
      * @return the state at the given time using linear interpolation. The default implementation always returns the current state
      */
-    default State getStateAt(float gameTime) {
-        return getCurrentState();
-    }
+    State getStateAt(float gameTime);
+
+    /**
+     * @return the state of this entity, as on the last {@link #preUpdate(float)} time.
+     */
+    State getPhysicsState();
 
     /**
      * @return the relative (local-space) bounding box of this entity
@@ -65,7 +68,7 @@ public interface Entity extends Storable {
     Collision getIntersection(Vector3fc origin, Vector3fc direction);
 
     /**
-     * returns the points of the shape of this entity as consistent with {@link #getCurrentState()}
+     * returns the points of the shape of this entity as consistent with {@link #getPhysicsState()}
      * @return a list of the exact wolrd-positions of the vertices of the shape of this object. Changes in the list are
      * not reflected in this object.
      */
@@ -74,7 +77,7 @@ public interface Entity extends Storable {
     }
 
     /**
-     * returns the points of the shape of this entity as consistent with {@link #getCurrentState()} and store the result
+     * returns the points of the shape of this entity as consistent with {@link #getPhysicsState()} and store the result
      * in the vectors of dest.
      * @param dest a list of vectors. If the result requires more or less elements, the redundant elements are deleted,
      *             and required elements are added.
@@ -95,7 +98,7 @@ public interface Entity extends Storable {
     /**
      * process a collision with the other entity, happening at collisionTime. The other entity will be called with this
      * same function, as {@code other.collideWith(this, collisionTime)}. The effect is that this entity's {@link
-     * #getCurrentState()} gets updated to {@code collisionTime}
+     * #getPhysicsState()} gets updated to {@code collisionTime}
      * <p>
      * Should not be called if either {@code this.}{@link #canCollideWith(Entity) canCollideWith}{@code (other)} or
      * {@code other.}{@link #canCollideWith(Entity) canCollideWith}{@code (this)}

@@ -89,6 +89,8 @@ public class MutableState implements State {
         Quaternionf rotation = new Quaternionf(rotationSpeed).scale(deltaTime);
         orientation.add(rotation);
 
+        time = gameTime;
+
         return this;
     }
 

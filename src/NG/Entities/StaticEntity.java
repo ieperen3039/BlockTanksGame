@@ -9,11 +9,11 @@ import org.joml.Quaternionf;
  * @author Geert van Ieperen created on 26-7-2019.
  */
 public abstract class StaticEntity implements Entity {
-    private State state;
+    private FixedState state;
     private boolean isDisposed = false;
 
     public StaticEntity(State state) {
-        this.state = state;
+        this.state = new FixedState(state);
     }
 
     public StaticEntity(Vector3fxc position, float currentTime, Quaternionf orientation){
@@ -21,23 +21,28 @@ public abstract class StaticEntity implements Entity {
     }
 
     @Override
-    public void update(float gameTime) {
+    public void preUpdate(float gameTime) {
         state.update(gameTime);
     }
 
     @Override
-    public State getCurrentState() {
+    public State getStateAt(float gameTime) {
+        FixedState fixedState = new FixedState(state);
+        fixedState.update(gameTime);
+        return fixedState;
+    }
+
+    @Override
+    public State getPhysicsState() {
         return state;
     }
 
     @Override
-    public State getStateAt(float gameTime) {
-        return state;
+    public void postUpdate(){
     }
 
     @Override
     public void collideWith(Entity other, Collision collision, float collisionTime) {
-        // play sound?
     }
 
     @Override

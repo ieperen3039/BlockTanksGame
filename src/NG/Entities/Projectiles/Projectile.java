@@ -6,9 +6,10 @@ import NG.Core.Game;
 import NG.Core.GameTimer;
 import NG.Entities.Entity;
 import NG.Entities.MovingEntity;
+import NG.Entities.MutableState;
+import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,15 +17,15 @@ import java.util.List;
 /**
  * @author Geert van Ieperen created on 2-4-2019.
  */
-public abstract class Projectile implements MovingEntity {
+public abstract class Projectile extends MovingEntity {
+    private static final BoundingBox zeroBox = new BoundingBox(0, 0, 0, 0, 0, 0);
+
     protected final Game game;
-    private final BoundingBox zeroBox = new BoundingBox(0, 0, 0, 0, 0, 0);
     private float spawnTime;
     private Entity source;
 
-    private boolean isDisposed = false;
-
-    public Projectile(Game game, Entity source, float spawnTime) {
+    public Projectile(Game game, Entity source, float spawnTime, MutableState spawnState) {
+        super(spawnState);
         this.game = game;
         this.source = source;
         this.spawnTime = spawnTime;
@@ -42,6 +43,8 @@ public abstract class Projectile implements MovingEntity {
             drawProjectile(gl, now);
         }
         gl.popMatrix();
+
+        cleanStatesUntil(now);
     }
 
     /**
@@ -51,32 +54,17 @@ public abstract class Projectile implements MovingEntity {
     protected abstract void drawProjectile(SGL gl, float renderTime);
 
     @Override
-    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
-        if (dest.size() != 1) dest = Collections.singletonList(new Vector3f());
-
-        getCurrentState().position().toVector3f(dest.get(0));
-
-        return dest;
-    }
-
-    @Override
-    public void dispose() {
-        isDisposed = true;
-    }
-
-    @Override
-    public boolean isDisposed() {
-        return isDisposed;
-    }
-
-    @Override
     public BoundingBox getHitbox() {
         return zeroBox;
     }
 
     @Override
-    public Collision getIntersection(Vector3fc origin, Vector3fc direction) {
-        return Collision.NONE;
+    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
+        if (dest.size() != 1) dest = Collections.singletonList(new Vector3f());
+
+        state.position().toVector3f(dest.get(0));
+
+        return dest;
     }
 
     @Override
@@ -86,7 +74,19 @@ public abstract class Projectile implements MovingEntity {
 
     @Override
     public void collideWith(Entity other, Collision collision, float collisionTime) {
-        assert canCollideWith(other);
-        dispose();
+        State collisionState = pastStates.getInterpolated(collisionTime);
+        float tickTime = state.time();
+
+        Vector3f newVelocity;
+        if (other instanceof MovingEntity) {
+            newVelocity = MovingEntity.sphereCollisionVelocity(this, (MovingEntity) other, collisionTime);
+        } else {
+            newVelocity = new Vector3f(collisionState.velocity()).reflect(collision.getNormal());
+        }
+
+        state.set(collisionState);
+        state.setVelocity(newVelocity);
+
+        state.update(tickTime);
     }
 }

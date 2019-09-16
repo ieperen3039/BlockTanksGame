@@ -22,7 +22,7 @@ public class MovingAudioSource extends AudioSource {
 
     @Override
     public void update(float renderTime) {
-        State entityState = source.getCurrentState();
+        State entityState = source.getStateAt(renderTime);
         set(AL10.AL_POSITION, entityState.position().toVector3f());
         set(AL10.AL_VELOCITY, entityState.velocity());
 

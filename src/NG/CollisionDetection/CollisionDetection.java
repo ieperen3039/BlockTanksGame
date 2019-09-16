@@ -418,13 +418,13 @@ public class CollisionDetection {
         }
 
         public void update(float gameTime) {
-            entity.update(gameTime);
+            entity.preUpdate(gameTime);
 
             List<Vector3f> buffer = prevPoints;
             prevPoints = nextPoints;
             nextPoints = entity.getShapePoints(buffer);
 
-            Vector3fxc nextPos = entity.getCurrentState().position();
+            Vector3fxc nextPos = entity.getStateAt(gameTime).position();
             BoundingBox prevBoundingBox = nextBoundingBox;
             nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
 
@@ -436,7 +436,7 @@ public class CollisionDetection {
          */
         public void update() {
             nextPoints = entity.getShapePoints(nextPoints);
-            Vector3fxc nextPos = entity.getCurrentState().position();
+            Vector3fxc nextPos = entity.getPhysicsState().position();
             nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
 
             hitbox = hitbox.union(nextBoundingBox);

@@ -1,23 +1,79 @@
 package NG.Entities;
 
+import NG.DataStructures.Generic.Pair;
+import NG.DataStructures.Interpolation.StateInterpolator;
 import NG.DataStructures.Vector3fx;
 import org.joml.Vector3f;
 
 /**
- * An entity is anything that is in the world, excluding the ground itself. Particles and other purely visual elements.
- * @author Geert van Ieperen. Created on 14-9-2018.
+ * @author Geert van Ieperen created on 5-9-2019.
  */
-public interface MovingEntity extends Entity {
-    /**
-     * sets the state of this entity, as per teleportation. Unspecified properties should be reset.
-     * @param state the new state properties.
-     */
-    void setState(State state);
+public abstract class MovingEntity implements Entity {
+    protected MutableState state;
+    protected StateInterpolator pastStates;
+    protected boolean isDisposed = false;
+
+    public MovingEntity(State spawnState) {
+        state = new MutableState(spawnState);
+        pastStates = new StateInterpolator(spawnState.copy(), spawnState.time());
+    }
 
     @Override
-    default boolean canCollideWith(Entity other) {
+    public void preUpdate(float gameTime) {
+        state.update(gameTime);
+    }
+
+    @Override
+    public void postUpdate() {
+        pastStates.add(state.copy(), state.time());
+    }
+
+    @Override
+    public State getPhysicsState() {
+        return state;
+    }
+
+    @Override
+    public State getStateAt(float gameTime) {
+        Pair<State, Float> lastState = pastStates.getLast();
+        if (lastState.right < gameTime){
+            lastState.left.interpolateTime(state, gameTime);
+        }
+
+        return pastStates.getInterpolated(gameTime);
+    }
+
+    /**
+         * sets the state of this entity, as per teleportation. Unspecified properties should be reset.
+         * @param newState the new state properties.
+         */
+    public void setState(State newState) {
+        float time = newState.time();
+        pastStates.add(getStateAt(time), time);
+        state.set(newState);
+        pastStates.add(newState.copy(), time);
+    }
+
+    public void cleanStatesUntil(float minimumTime){
+        pastStates.removeUntil(minimumTime);
+    }
+
+    @Override
+    public void dispose() {
+        isDisposed = true;
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return isDisposed;
+    }
+
+    @Override
+    public boolean canCollideWith(Entity other) {
         return other != this;
     }
+
+    public abstract float getMass();
 
     /**
      * calculates the new velocity of the target entity, when colliding with other on the given moment in time.
@@ -27,7 +83,9 @@ public interface MovingEntity extends Entity {
      * @param collisionTime the moment of collision
      * @return the new velocity
      */
-    static Vector3f sphereCollisionVelocity(MovingEntity target, MovingEntity other, float collisionTime) {
+    public static Vector3f sphereCollisionVelocity(
+            MovingEntity target, MovingEntity other, float collisionTime
+    ) {
         Vector3f temp = new Vector3f();
         State thisState = target.getStateAt(collisionTime);
         Vector3f thisVel = new Vector3f(thisState.velocity());
@@ -47,6 +105,4 @@ public interface MovingEntity extends Entity {
 
         return thisVel;
     }
-
-    float getMass();
 }

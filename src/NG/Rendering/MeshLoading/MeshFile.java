@@ -361,7 +361,17 @@ public class MeshFile implements Storable {
 
         int bloat = 0;
 
-        for (Mesh.Face face : getFaces()) {
+        List<Mesh.Face> faceList = getFaces();
+        int[] ptr = new int[2];
+        Logger.printOnline(() -> String.format(
+                "dividing map: %d/%d (%1.01f%%) (added %d faces)",
+                ptr[0], faceList.size(), (ptr[0] * 100f / faceList.size()), ptr[1])
+        );
+        for (int j = 0; j < faceList.size(); j++) {
+            ptr[0] = j;
+            ptr[1] = bloat;
+            Mesh.Face face = faceList.get(j);
+
             Vector3fc[] faceVecs = new Vector3fc[face.size()];
 
             min.set(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -370,7 +380,8 @@ public class MeshFile implements Storable {
             for (int i = 0; i < face.size(); i++) {
                 Vector3fc v = vertices.get(face.vert[i]);
                 faceVecs[i] = v;
-                coord.set((int) Math.floor(v.x() / containerSize), (int) Math.floor(v.y() / containerSize), (int) Math.floor(v.z() / containerSize));
+                coord.set((int) Math.floor(v.x() / containerSize), (int) Math.floor(v.y() / containerSize), (int) Math.floor(v
+                        .z() / containerSize));
                 max.max(coord);
                 min.min(coord);
             }
@@ -406,7 +417,7 @@ public class MeshFile implements Storable {
             }
             bloat--;
         }
-        if (doExact) Logger.DEBUG.printf("Mesh split: Increased number of faces by %1.02f%%", (float) 100 * bloat / faces.size());
+        if (doExact) Logger.DEBUG.printf("Mesh split: Increased number of faces by %1.02f%%", 100f * bloat / faces.size());
         return world;
     }
 

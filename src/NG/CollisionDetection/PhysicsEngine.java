@@ -20,8 +20,9 @@ public class PhysicsEngine extends AbstractState {
 
     @Override
     public void update(float gameTime) {
+        entities.forEach(entity -> entity.preUpdate(gameTime));
         entities.processCollisions(gameTime);
-        entities.forEach(entity -> entity.update(gameTime));
+        entities.forEach(Entity::postUpdate);
     }
 
     @Override

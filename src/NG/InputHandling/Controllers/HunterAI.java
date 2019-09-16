@@ -23,7 +23,7 @@ public class HunterAI extends RocketAI {
     }
 
     @Override
-    public void update() {
+    public void update(float gameTime) {
 
         if (target == null) {
 //            target = getClosestPowerup(actualTarget);
@@ -33,7 +33,7 @@ public class HunterAI extends RocketAI {
             target = actualTarget;
         }
 
-        super.update();
+        super.update(gameTime);
     }
 
     @Override

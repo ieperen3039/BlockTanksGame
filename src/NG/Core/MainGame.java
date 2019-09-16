@@ -267,26 +267,31 @@ public class MainGame implements ModLoader {
 
     private void openGame() {
         gameService.select(game);
-        game.computeOnRenderThread(() -> {
-            MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"), game.get(Settings.class).DEBUG);
-            map.init(game);
-            GameMap original = game.get(GameMap.class);
-            game.add(map);
-            game.remove(original);
-            original.cleanup();
 
-            MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("chart.conbi"), MovingEntity.class);
-            Vector3fc ePos = map.getGridScanner()
-                    .getIntersection(new Vector3f(0, 0, 100), Vectors.NZ, true)
-                    .getHitPos();
-            assert ePos != null;
-            entity.setState(new FixedState(new Vector3fx(ePos).add(0, 0, 10), new Quaternionf()));
+        new Thread(() -> {
+            try {
+                MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"), game.get(Settings.class).DEBUG);
+                map.init(game);
+                GameMap original = game.get(GameMap.class);
+                game.add(map);
+                game.remove(original);
+                original.cleanup();
 
-            GameState gameState = game.get(GameState.class);
-            gameState.addEntity(entity);
-            gameState.addEntity(new Cursor(entity::getCurrentState));
-            Logger.printOnline(() -> String.valueOf(entity.getCurrentState().position()));
-            return null;
-        });
+                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("chart.conbi"), MovingEntity.class);
+                Vector3fc ePos = map.getGridScanner()
+                        .getIntersection(new Vector3f(0, 0, 100), Vectors.NZ, true)
+                        .getHitPos();
+                assert ePos != null;
+                entity.setState(new FixedState(new Vector3fx(ePos).add(0, 0, 10), new Quaternionf()));
+
+                GameState gameState = game.get(GameState.class);
+                gameState.addEntity(entity);
+                gameState.addEntity(new Cursor(entity::getPhysicsState));
+                Logger.printOnline(() -> String.valueOf(entity.getPhysicsState().position()));
+
+            } catch (Exception ex) {
+                Logger.ERROR.print("Could not load map", ex);
+            }
+        }, "Load map").start();
     }
 }

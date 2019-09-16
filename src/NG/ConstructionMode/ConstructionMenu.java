@@ -10,6 +10,7 @@ import NG.Camera.DummyEntity;
 import NG.CollisionDetection.GameState;
 import NG.Core.Game;
 import NG.DataStructures.Generic.Color4f;
+import NG.DataStructures.Vector3fx;
 import NG.GUIMenu.BaseLF;
 import NG.GUIMenu.Components.*;
 import NG.GUIMenu.SimpleHUD;
@@ -21,6 +22,7 @@ import NG.Settings.KeyBinding;
 import NG.Storable;
 import NG.Tools.Directory;
 import NG.Tools.Logger;
+import org.joml.Quaternionf;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
@@ -143,7 +145,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     public void init(Game game) throws Exception {
         super.init(game);
 
-        setConstruction(new BlocksConstruction());
+        setConstruction(new BlocksConstruction(new Vector3fx(), new Quaternionf(), 0));
 
         game.get(GameState.class).addEntity(
                 new DummyEntity() {

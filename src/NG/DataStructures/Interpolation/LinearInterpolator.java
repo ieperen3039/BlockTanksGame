@@ -1,94 +1,78 @@
 package NG.DataStructures.Interpolation;
 
-import NG.DataStructures.Generic.BlockingTimedArrayQueue;
+import NG.DataStructures.Generic.Pair;
+import NG.DataStructures.Generic.TimedArrayQueue;
 
 /**
+ * a queue of elements, which can be interpolated based on fractions. The queue can be used as a bridge between a
+ * data-generation thread and a visualisation thread
  * @author Geert van Ieperen created on 15-12-2017.
  */
-public abstract class LinearInterpolator<T> extends BlockingTimedArrayQueue<T> {
-    private double activeTime;
-    protected T activeElement;
-
+public abstract class LinearInterpolator<T> extends TimedArrayQueue<T> {
     /**
-     * @param capacity       the expected maximum number of entries
      * @param initialElement this item will initially be placed in the queue twice.
      * @param initialTime    the time of starting
      */
-    public LinearInterpolator(int capacity, T initialElement, float initialTime) {
-        super(capacity);
-        add(initialElement, initialTime - 1);
-        activeTime = initialTime;
-        activeElement = initialElement;
+    public LinearInterpolator(T initialElement, float initialTime) {
+        super(initialElement, initialTime - 1);
+        add(initialElement, initialTime);
     }
 
     /**
      * crates an interpolator with the first two values already given
-     * @param capacity      the expected maximum number of entries
      * @param firstElement  the item that occurs first
      * @param firstTime     the time of occurence
      * @param secondElement the item that occurs second
      * @param secondTime    the time of occurence of the second, where first < second
      */
-    public LinearInterpolator(int capacity, T firstElement, float firstTime, T secondElement, float secondTime) {
-        super(capacity);
+    public LinearInterpolator(T firstElement, float firstTime, T secondElement, float secondTime) {
+        super(firstElement, firstTime);
+        assert firstTime < secondTime;
         add(secondElement, secondTime);
-        activeTime = firstTime;
-        activeElement = firstElement;
     }
 
     /**
-     * @return the interpolated object defined by implementation
+     * @return the interpolated object defined by implementation. if there is only one element, the result is equal to
+     * {@link #interpolate(Object, Object, float) interpolate(elt, elt, 0)}
      */
     public T getInterpolated(float timeStamp) {
-        removeUntil(timeStamp);
-
-        double firstTime = activeTime;
-        T firstElt = activeElement;
-        double secondTime = nextTimeStamp();
-        T secondElt = nextElement();
-
-        if (firstElt == null) {
-            firstElt = secondElt;
+        assert !isEmpty();
+        if (size() == 1) {
+            Pair<T, Float> elt = getFirst();
+            return interpolate(elt.left, elt.left, 0);
         }
 
-        float fraction = (float) ((timeStamp - firstTime) / (secondTime - firstTime));
-        if (Float.isNaN(fraction)) return firstElt;
+        ActiveNext elts = getActiveAndNext(timeStamp);
 
-        return interpolate(firstElt, secondElt, fraction);
+        float fraction = (timeStamp - elts.firstTime) / (elts.secondTime - elts.firstTime);
+        if (Float.isNaN(fraction)) return elts.firstElement;
+
+        return interpolate(elts.firstElement, elts.secondElement, fraction);
     }
 
     public T getDerivative(float timeStamp) {
-        removeUntil(timeStamp);
-
-        double firstTime = activeTime;
-        T firstElt = activeElement;
-        double secondTime = nextTimeStamp();
-        T secondElt = nextElement();
-
-        if (firstElt == null) {
-            firstElt = secondElt;
+        assert !isEmpty();
+        if (size() == 1) {
+            Pair<T, Float> elt = getFirst();
+            return derivative(elt.left, elt.left, 0);
         }
 
-        return derivative(firstElt, secondElt, (float) (secondTime - firstTime));
+        ActiveNext elts = getActiveAndNext(timeStamp);
+
+        return derivative(elts.firstElement, elts.secondElement, elts.secondTime - elts.firstTime);
     }
+
+    @Override
+    public Pair<T, Float> poll() {
+        if (size() == 1) return null;
+        return super.poll();
+    }
+
     /**
      * interpolate using linear interpolation
      * @return firstElt + (secondElt - firstElt) * fraction
      */
     protected abstract T interpolate(T firstElt, T secondElt, float fraction);
-
-    @Override
-    protected void progress() {
-        activeTime = nextTimeStamp();
-        activeElement = nextElement();
-        super.progress();
-    }
-
-    @Override
-    public String toString() {
-        final String backend = super.toString();
-        return backend.replaceFirst("\n", "\n" + String.format("%1.04f", activeTime) + " > " + activeElement + "\n");
-    }
 
     /**
      * @return the derivative of the two values, when they are {@code timeDifference} seconds apart

@@ -10,12 +10,12 @@ import org.joml.Vector3f;
  * @author Geert van Ieperen created on 14-8-2019.
  */
 public class StateInterpolator extends LinearInterpolator<State> {
-    public StateInterpolator(int capacity, State initialElement, float initialTime) {
-        super(capacity, initialElement, initialTime);
+    public StateInterpolator(State initialElement, float initialTime) {
+        super(initialElement, initialTime);
     }
 
-    public StateInterpolator(int capacity, State firstElement, float firstTime, State secondElement, float secondTime) {
-        super(capacity, firstElement, firstTime, secondElement, secondTime);
+    public StateInterpolator(State firstElement, float firstTime, State secondElement, float secondTime) {
+        super(firstElement, firstTime, secondElement, secondTime);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class StateInterpolator extends LinearInterpolator<State> {
     }
 
     @Override
-    public State derivative(State firstElt, State secondElt, float timeDifference) {
+    protected State derivative(State firstElt, State secondElt, float timeDifference) {
         return new MutableState(
                 secondElt.time() - firstElt.time(),
                 new Vector3fx(secondElt.position()).sub(firstElt.position()),

@@ -8,17 +8,17 @@ import org.joml.Vector3fc;
  */
 public class VectorInterpolator extends LinearInterpolator<Vector3fc> {
 
-    public VectorInterpolator(int capacity, Vector3fc initialVector, float initialTime) {
-        super(capacity, initialVector, initialTime);
+    public VectorInterpolator(Vector3fc initialVector, float initialTime) {
+        super(initialVector, initialTime);
     }
 
     /**
      * creates an interpolator with two values already set. Make sure that firstTime < secondTime
      */
     public VectorInterpolator(
-            int capacity, Vector3fc firstElement, float firstTime, Vector3fc secondElement, float secondTime
+            Vector3fc firstElement, float firstTime, Vector3fc secondElement, float secondTime
     ) {
-        super(capacity, firstElement, firstTime, secondElement, secondTime);
+        super(firstElement, firstTime, secondElement, secondTime);
     }
 
     protected Vector3fc interpolate(Vector3fc firstElt, Vector3fc secondElt, float fraction) {

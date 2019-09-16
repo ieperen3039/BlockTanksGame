@@ -12,10 +12,9 @@ public interface AircraftControls {
 
     /**
      * updates the state of the controller.
-     * <p>
-     * May only be called in the main thread.
+     * @param gameTime the current game time
      */
-    void update();
+    void update(float gameTime);
 
     /**
      * the amount of throttle requested by this controller.
@@ -77,7 +76,7 @@ public interface AircraftControls {
      */
     class EmptyController implements AircraftControls {
         @Override
-        public void update() {
+        public void update(float gameTime) {
         }
 
         @Override

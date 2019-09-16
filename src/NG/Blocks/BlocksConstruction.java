@@ -4,13 +4,13 @@ import NG.Blocks.Types.*;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.Color4f;
-import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import NG.Entities.Entity;
+import NG.Entities.FixedState;
 import NG.Entities.MovingEntity;
-import NG.Entities.MutableState;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Rendering.MatrixStack.ShadowMatrix;
 import NG.Storable;
 import NG.Tools.Logger;
 import org.joml.Quaternionf;
@@ -30,23 +30,17 @@ import java.util.List;
  * An entity made from block grids
  * @author Geert van Ieperen created on 14-8-2019.
  */
-public class BlocksConstruction implements MovingEntity {
+public class BlocksConstruction extends MovingEntity {
     private boolean isDisposed = false;
-    private State state;
     private List<BlockSubGrid> subgrids = new ArrayList<>();
 
-    public BlocksConstruction() {
-        this(new Vector3fx(), 0);
+    public BlocksConstruction(Vector3fxc position, Quaternionf rotation, float gameTime) {
+        this(new FixedState(position, rotation, gameTime));
     }
 
-    public BlocksConstruction(Vector3fxc position, float gameTime) {
-        this.state = new MutableState(gameTime, position);
+    public BlocksConstruction(FixedState spawnState) {
+        super(spawnState);
         subgrids.add(new BlockSubGrid());
-    }
-
-    @Override
-    public void setState(State state) {
-        this.state = state;
     }
 
     @Override
@@ -68,16 +62,8 @@ public class BlocksConstruction implements MovingEntity {
             }
         }
         gl.popMatrix();
-    }
 
-    @Override
-    public void update(float gameTime) {
-        state.update(gameTime);
-    }
-
-    @Override
-    public State getCurrentState() {
-        return state;
+        cleanStatesUntil(renderTime);
     }
 
     @Override
@@ -118,22 +104,44 @@ public class BlocksConstruction implements MovingEntity {
 
     @Override
     public List<Vector3f> getShapePoints(List<Vector3f> dest) {
-        return null;
+        ShadowMatrix sm = new ShadowMatrix();
+        int i = 0;
+
+        for (BlockSubGrid grid : subgrids) {
+            sm.pushMatrix();
+            sm.translate(grid.getWorldPosition());
+            sm.rotate(grid.getWorldRotation());
+
+            for (AbstractPiece piece : grid) {
+                // collect points and ensure dest capacity
+                List<Vector3fc> points = piece.getShape().getPoints();
+                int startInd = i;
+                i += points.size();
+                while (dest.size() < i){
+                    dest.add(new Vector3f());
+                }
+
+                piece.doLocal(sm, 0, () -> {
+                    int curInd = startInd;
+                    for (Vector3fc point : points) {
+                        // map position of point to world-space and store it in the appropriate position in dest
+                        sm.getPosition(point, dest.get(curInd++));
+                    }
+                });
+            }
+            sm.popMatrix();
+        }
+
+        if (dest.size() > i) {
+            dest.subList(i, dest.size()).clear();
+        }
+
+        return dest;
     }
 
     @Override
     public void collideWith(Entity other, Collision collision, float collisionTime) {
 
-    }
-
-    @Override
-    public void dispose() {
-        isDisposed = true;
-    }
-
-    @Override
-    public boolean isDisposed() {
-        return isDisposed;
     }
 
     @Override
@@ -164,6 +172,8 @@ public class BlocksConstruction implements MovingEntity {
     }
 
     public BlocksConstruction(DataInputStream in) throws IOException, ClassNotFoundException {
+        super(Storable.read(in, State.class));
+
         int nrOfTypes = in.readInt();
         PieceType[] typeMap = new PieceType[nrOfTypes];
         for (int i = 0; i < nrOfTypes; i++) {
@@ -172,7 +182,6 @@ public class BlocksConstruction implements MovingEntity {
             typeMap[i] = PieceTypeCollection.cheatCache.get(pieceName);
         }
 
-        state = Storable.read(in, State.class);
         int nrOfGrids = in.readInt();
         subgrids = new ArrayList<>(nrOfGrids);
         for (int i = 0; i < nrOfGrids; i++) {

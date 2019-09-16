@@ -40,7 +40,7 @@ public class FollowingCamera implements Camera {
 
     public FollowingCamera(Entity target){
         this.target = target;
-        State state = target.getCurrentState();
+        State state = target.getPhysicsState();
         Vector3f targetEye = new Vector3f(eyeRelative).rotate(state.orientation());
         Vector3fc targetUp = Vectors.newZ().rotate(state.orientation());
         this.eye = new ExponentialSmoothVector(targetEye, EYE_PRESERVE);

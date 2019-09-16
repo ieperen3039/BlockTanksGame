@@ -32,7 +32,7 @@ import static NG.Blocks.FilePieceTypeCollection.SCALE;
  * @author Geert van Ieperen created on 8-8-2019.
  */
 public class MeshMap extends AbstractMap {
-    private static final float MESH_TILE_SIZE = 15; // at least 5 times as big as the planes of the map, preferably bigger
+    private static final float MESH_TILE_SIZE = 200; // at least 5 times as big as the planes of the map, preferably bigger
     private static final Vector3fc TILE_SIZE_VEC = new Vector3f(MESH_TILE_SIZE, MESH_TILE_SIZE, MESH_TILE_SIZE);
     private MapChunk[][][] grid;
     private AABBi gridRange;
@@ -45,7 +45,7 @@ public class MeshMap extends AbstractMap {
     public MeshMap(Path path, boolean alwaysReload) throws IOException {
         String fullName = path.getFileName().toString();
         String baseName = fullName.substring(0, fullName.lastIndexOf('.'));
-        binaryFile = path.getParent().resolve(baseName + ".mesbi").toFile();
+        binaryFile = path.getParent().resolve(baseName + ".binary").toFile();
 
         if (!alwaysReload && binaryFile.exists()) {
             try (DataInputStream in = Storable.getInputStream(binaryFile)){
@@ -53,7 +53,7 @@ public class MeshMap extends AbstractMap {
                 return;
 
             } catch (Throwable ex){
-                Logger.DEBUG.print("Reading mesbi file caused an " + ex.getClass().getSimpleName());
+                Logger.DEBUG.print("Reading map binary caused an " + ex.getClass().getSimpleName());
             }
         }
 
@@ -127,6 +127,11 @@ public class MeshMap extends AbstractMap {
     @Override
     public void init(Game game) throws Exception {
         this.game = game;
+        game.executeOnRenderThread(() -> {
+            for (MapChunk chunk : getChunks()) {
+                chunk.loadMesh();
+            }
+        });
     }
 
     @Override
@@ -306,7 +311,7 @@ public class MeshMap extends AbstractMap {
         }
 
         @Override
-        public void update(float gameTime) {
+        public void preUpdate(float gameTime) {
 
         }
     }

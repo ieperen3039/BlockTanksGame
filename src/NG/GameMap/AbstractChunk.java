@@ -20,21 +20,31 @@ import java.util.List;
  * @author Geert van Ieperen created on 12-8-2019.
  */
 public abstract class AbstractChunk extends StaticEntity implements MapChunk {
-    private final Mesh mesh;
+    private MeshFile meshFile;
+    private Mesh mesh = null;
     private final Shape shape;
     private final BoundingBox boundingBox;
 
     public AbstractChunk(GameMap parent, int xCoord, int yCoord, int zCoord, MeshFile file) {
         super(parent.getPosition(xCoord, yCoord, zCoord), 0, new Quaternionf());
-        mesh = file.getMesh();
+        meshFile = file;
         shape = file.getShape();
         boundingBox = new BoundingBox(shape.getBoundingBox(), new Vector3f());
     }
 
     @Override
     public void draw(SGL gl, float renderTime) {
+        if (mesh == null) {
+            loadMesh();
+        }
         // translated by default
         gl.render(mesh, this);
+    }
+
+    @Override
+    public void loadMesh() {
+        mesh = meshFile.getMesh();
+        meshFile = null;
     }
 
     @Override

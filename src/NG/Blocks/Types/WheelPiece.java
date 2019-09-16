@@ -1,11 +1,7 @@
 package NG.Blocks.Types;
 
 import NG.DataStructures.Generic.Color4f;
-import NG.Entities.Entity;
-import NG.Rendering.Material;
-import NG.Rendering.MatrixStack.SGL;
-import NG.Rendering.Shaders.MaterialShader;
-import NG.Rendering.Shaders.ShaderProgram;
+import NG.Rendering.MatrixStack.MatrixStack;
 import org.joml.Vector3ic;
 
 import java.io.DataInputStream;
@@ -54,16 +50,17 @@ public class WheelPiece extends AbstractPiece {
     }
 
     @Override
-    public void draw(SGL gl, Entity entity, float renderTime) {
-        ShaderProgram shader = gl.getShader();
-        if (shader instanceof MaterialShader) {
-            ((MaterialShader) shader).setMaterial(Material.PLASTIC, color);
-        }
-
+    public void doLocal(MatrixStack gl, float renderTime, Runnable action) {
         gl.pushMatrix();
         {
+            gl.translate(
+                    position.x * BLOCK_BASE,
+                    position.y * BLOCK_BASE,
+                    position.z * BLOCK_HEIGHT
+            );
             gl.rotate(rotSpeed * renderTime, 0, 0, 1);
-            drawPiece(gl, entity, renderTime);
+
+            action.run();
         }
         gl.popMatrix();
     }

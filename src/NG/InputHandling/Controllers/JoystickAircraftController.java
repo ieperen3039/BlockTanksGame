@@ -35,11 +35,11 @@ public class JoystickAircraftController implements AircraftControls {
             return;
         }
 
-        update();
+        update(0);
     }
 
     @Override
-    public void update() {
+    public void update(float gameTime) {
         if (joystick > GLFW_JOYSTICK_LAST && !findController()) return;
 
         glfwGetJoystickButtons(joystick).get(buttons);

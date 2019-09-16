@@ -88,6 +88,8 @@ public interface Storable {
         } catch (NoSuchMethodException ex) {
             throw new IOException(foundClass + " has no constructor that accepts as argument a DataInputStream class", ex);
 
+        } catch (ClassNotFoundException ex){
+            throw new ClassNotFoundException(expected.getName(), ex);
         }
     }
 

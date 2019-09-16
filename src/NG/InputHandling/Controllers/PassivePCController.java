@@ -73,7 +73,7 @@ public class PassivePCController
     }
 
     @Override
-    public void update() {
+    public void update(float gameTime) {
         // Poll for events at the active window
         glfwPollEvents();
     }

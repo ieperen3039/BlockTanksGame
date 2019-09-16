@@ -75,15 +75,13 @@ public abstract class AbstractSGL implements SGL {
     }
 
     @Override
-    public Vector3f getPosition(Vector3fc position) {
-        Vector3f result = new Vector3f();
+    public Vector3f getPosition(Vector3fc position, Vector3f result) {
         position.mulPosition(modelMatrix, result);
         return result;
     }
 
     @Override
-    public Vector3f getDirection(Vector3fc direction) {
-        Vector3f result = new Vector3f();
+    public Vector3f getDirection(Vector3fc direction, Vector3f result) {
         direction.mulDirection(modelMatrix, result);
         return result;
     }

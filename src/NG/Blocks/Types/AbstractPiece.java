@@ -6,11 +6,13 @@ import NG.DataStructures.Generic.AABBi;
 import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
 import NG.Rendering.Material;
+import NG.Rendering.MatrixStack.MatrixStack;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Rendering.Shaders.MaterialShader;
 import NG.Rendering.Shaders.ShaderProgram;
+import NG.Shapes.Shape;
 import NG.Storable;
 import NG.Tools.Directory;
 import org.joml.Vector3f;
@@ -58,15 +60,7 @@ public abstract class AbstractPiece {
             ((MaterialShader) shader).setMaterial(Material.PLASTIC, color);
         }
 
-        gl.pushMatrix();
-        {
-            gl.translate(
-                    position.x * BLOCK_BASE,
-                    position.y * BLOCK_BASE,
-                    position.z * BLOCK_HEIGHT
-            );
-            gl.rotateQuarter(0, 0, rotation);
-
+        doLocal(gl, renderTime, () -> {
             // first render studs to preserve color (regarding sub-grids)
             if (RENDER_STUDS) {
                 if (STUD_MESH == null) STUD_MESH = STUD.getMesh();
@@ -82,6 +76,20 @@ public abstract class AbstractPiece {
             }
 
             drawPiece(gl, entity, renderTime);
+        });
+    }
+
+    public void doLocal(MatrixStack gl, float renderTime, Runnable action) {
+        gl.pushMatrix();
+        {
+            gl.translate(
+                    position.x * BLOCK_BASE,
+                    position.y * BLOCK_BASE,
+                    position.z * BLOCK_HEIGHT
+            );
+            gl.rotateQuarter(0, 0, rotation);
+
+            action.run();
         }
         gl.popMatrix();
     }
@@ -227,6 +235,10 @@ public abstract class AbstractPiece {
     public abstract PieceType getType();
 
     public abstract AbstractPiece copy();
+
+    public Shape getShape() {
+        return getType().hitbox;
+    }
 
     private static void rotateQuarters(Vector3i vector, byte quarters) {
         for (byte i = 0; i < quarters; i++) {

@@ -76,12 +76,12 @@ public class RocketAI implements AircraftControls {
     }
 
     @Override
-    public void update() {
+    public void update(float gameTime) {
         if (target.isDisposed()) return;
 
-        State projState = projectile.getCurrentState();
+        State projState = projectile.getStateAt(gameTime);
         projectilePos.set(projState.position());
-        targetPos.set(getTargetPosition());
+        targetPos.set(getTargetPosition(gameTime));
 
         new Vector3fx(targetPos)
                 .sub(projectilePos)
@@ -98,13 +98,13 @@ public class RocketAI implements AircraftControls {
         zVec.normalize();
     }
 
-    protected Vector3fxc getTargetPosition() {
+    protected Vector3fxc getTargetPosition(float gameTime) {
         if (target == null) {
             return new Vector3fx();
         }
 
-        State tgtState = target.getCurrentState();
-        Vector3fx tPos = new Vector3fx(tgtState.position());
+        State tgtState = target.getStateAt(gameTime);
+        Vector3fxc tPos = tgtState.position();
         if (doExtrapolate) {
             return extrapolateTarget(tgtState.velocity(), tPos, projectilePos, pSpeed);
 
@@ -125,7 +125,7 @@ public class RocketAI implements AircraftControls {
      * @return position S such that if a position on sPos would move with a speed of sSpeed toward S, he would meet the
      *         target at S
      */
-    public static Vector3fx extrapolateTarget(Vector3fc tVel, Vector3fx tPos, Vector3fxc sPos, float sSpeed) {
+    public static Vector3fxc extrapolateTarget(Vector3fc tVel, Vector3fxc tPos, Vector3fxc sPos, float sSpeed) {
         Vector3f relPos = new Vector3fx(tPos).sub(sPos).toVector3f();
 
         // || xA + B || = v
@@ -141,7 +141,7 @@ public class RocketAI implements AircraftControls {
             float lambda1 = (-b + (float) Math.sqrt(d)) / (2 * a);
             float lambda2 = (-b - (float) Math.sqrt(d)) / (2 * a);
             float exFac = Math.max(lambda1, lambda2);
-            tPos.add(tVel.mul(exFac, relPos));
+            new Vector3fx(tPos).add(tVel.mul(exFac, relPos));
         }
 
         return tPos;

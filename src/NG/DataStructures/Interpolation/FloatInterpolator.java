@@ -5,8 +5,8 @@ package NG.DataStructures.Interpolation;
  */
 public class FloatInterpolator extends LinearInterpolator<Float> {
 
-    public FloatInterpolator(int capacity, Float initialValue, float initialTime) {
-        super(capacity, initialValue, initialTime);
+    public FloatInterpolator(Float initialValue, float initialTime) {
+        super(initialValue, initialTime);
     }
 
     @Override
