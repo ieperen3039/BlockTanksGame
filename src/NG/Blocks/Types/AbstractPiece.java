@@ -2,6 +2,7 @@ package NG.Blocks.Types;
 
 import NG.Blocks.BlockSubGrid;
 import NG.CollisionDetection.Collision;
+import NG.Core.Game;
 import NG.DataStructures.Generic.AABBi;
 import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
@@ -181,6 +182,16 @@ public abstract class AbstractPiece {
         }
 
         return getType().hitbox.getIntersection(origin, direction);
+    }
+
+    /**
+     * computes the force that this piece exerts, assuming -z is down. Default is the gravity.
+     * @param environment the environment of this block
+     * @param entity the entity where this block is part of
+     * @param worldPosition the position of this piece, as returned by {@link #getWorldPosition(BlockSubGrid)}
+     */
+    public Vector3f getForce(Game environment, Entity entity, Vector3f worldPosition){
+        return new Vector3f(0, 0, 9.81f * getType().mass);
     }
 
     /**

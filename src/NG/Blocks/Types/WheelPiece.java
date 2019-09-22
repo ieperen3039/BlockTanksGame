@@ -1,7 +1,10 @@
 package NG.Blocks.Types;
 
+import NG.Core.Game;
 import NG.DataStructures.Generic.Color4f;
+import NG.Entities.Entity;
 import NG.Rendering.MatrixStack.MatrixStack;
+import org.joml.Vector3f;
 import org.joml.Vector3ic;
 
 import java.io.DataInputStream;
@@ -21,6 +24,11 @@ public class WheelPiece extends AbstractPiece {
         this.type = type;
 //        rotSpeed = 0;
         rotSpeed = 1f;
+    }
+
+    @Override
+    public Vector3f getForce(Game environment, Entity entity, Vector3f worldPosition) {
+        return super.getForce(environment, entity, worldPosition);
     }
 
     public void setRotSpeed(float rotSpeed) {
