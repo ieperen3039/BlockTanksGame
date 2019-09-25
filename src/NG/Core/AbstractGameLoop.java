@@ -131,7 +131,7 @@ public abstract class AbstractGameLoop extends Thread {
     }
 
     private void runPostLoopActions() {
-        while (!postLoopActions.isEmpty() && !Thread.interrupted()) {
+        while (!postLoopActions.isEmpty() && !Thread.currentThread().isInterrupted()) {
             try {
                 postLoopActions.remove().run();
 

@@ -1,12 +1,16 @@
 package NG.Rendering.Shaders;
 
 import NG.Core.Game;
+import NG.DataStructures.Generic.Color4f;
 import NG.Rendering.MatrixStack.SGL;
+import org.joml.*;
+import org.lwjgl.system.MemoryStack;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Scanner;
@@ -44,6 +48,99 @@ public interface ShaderProgram {
      * @param game the source of information
      */
     void initialize(Game game);
+
+    /**
+     * Set the value of a 4x4 matrix shader uniform.
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, Matrix4f value) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            // Dump the matrix into a float buffer
+            FloatBuffer fb = stack.mallocFloat(16);
+            value.get(fb);
+            glUniformMatrix4fv(unif(uniformName), false, fb);
+        }
+    }
+
+    /**
+     * Set the value of a 3x3 matrix shader uniform.
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, Matrix3f value) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            // Dump the matrix into a float buffer
+            FloatBuffer fb = stack.mallocFloat(9);
+            value.get(fb);
+            glUniformMatrix3fv(unif(uniformName), false, fb);
+        }
+    }
+
+    /**
+     * Set the value of a certain integer shader uniform
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, int value) {
+        glUniform1i(unif(uniformName), value);
+    }
+
+    /**
+     * Set the value of a certain float shader uniform
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, float value) {
+        glUniform1f(unif(uniformName), value);
+    }
+
+    /**
+     * Set the value of a certain 3D Vector shader uniform
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, Vector3fc value) {
+        glUniform3f(unif(uniformName), value.x(), value.y(), value.z());
+    }
+
+    /**
+     * Set the value of a certain 2D Vector shader uniform
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, Vector2fc value) {
+        glUniform2f(unif(uniformName), value.x(), value.y());
+    }
+
+    int unif(String uniformName);
+
+    default void setUniform(String uniformName, float[] value) {
+        glUniform4f(unif(uniformName), value[0], value[1], value[2], value[3]);
+    }
+
+    /**
+     * Set the value of a certain 4D Vector shader uniform
+     * @param uniformName The name of the uniform.
+     * @param value       The new value of the uniform.
+     */
+    default void setUniform(String uniformName, Vector4fc value) {
+        glUniform4f(unif(uniformName), value.x(), value.y(), value.z(), value.w());
+    }
+
+    default void setUniform(String uniformName, boolean value) {
+        setUniform(uniformName, value ? 1 : 0);
+    }
+
+    default void setUniform(String uniformName, Color4f color) {
+        glUniform4f(unif(uniformName), color.red, color.green, color.blue, color.alpha);
+    }
+
+    void setProjectionMatrix(Matrix4f viewProjectionMatrix);
+
+    void setModelMatrix(Matrix4f modelMatrix);
+
+    void setNormalMatrix(Matrix3f normalMatrix);
 
     SGL getGL(Game game);
 

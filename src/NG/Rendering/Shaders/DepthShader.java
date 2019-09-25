@@ -7,13 +7,12 @@ import NG.Rendering.Lights.DirectionalLight;
 import NG.Rendering.MatrixStack.AbstractSGL;
 import NG.Rendering.MeshLoading.Mesh;
 import NG.Tools.Directory;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3fc;
-import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,6 +64,11 @@ public class DepthShader implements ShaderProgram, LightShader {
     }
 
     @Override
+    public int unif(String uniformName) {
+        return uniforms.get(uniformName);
+    }
+
+    @Override
     public void bind() {
         glUseProgram(programId);
     }
@@ -110,24 +114,6 @@ public class DepthShader implements ShaderProgram, LightShader {
         uniforms.put(uniformName, uniformLocation);
     }
 
-    public void setModelMatrix(Matrix4f modelMatrix) {
-        setUniform("modelMatrix", modelMatrix);
-    }
-
-    /**
-     * Set the value of a 4x4 matrix shader uniform.
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    private void setUniform(String uniformName, Matrix4f value) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            // Dump the matrix into a float buffer
-            FloatBuffer fb = stack.mallocFloat(16);
-            value.get(fb);
-            glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
-        }
-    }
-
     public void setLightSpaceMatrix(Matrix4f lightSpaceMatrix) {
         setUniform("lightSpaceMatrix", lightSpaceMatrix);
     }
@@ -163,6 +149,21 @@ public class DepthShader implements ShaderProgram, LightShader {
      */
     public DepthGL getGL(Game game) {
         return new DepthGL();
+    }
+
+    @Override
+    public void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
+        // ignore
+    }
+
+    @Override
+    public void setModelMatrix(Matrix4f modelMatrix) {
+        setUniform("modelMatrix", modelMatrix);
+    }
+
+    @Override
+    public void setNormalMatrix(Matrix3f normalMatrix) {
+        // ignore
     }
 
     /**

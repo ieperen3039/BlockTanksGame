@@ -4,6 +4,7 @@ import NG.Blocks.Types.AbstractPiece;
 import NG.Blocks.Types.JointPiece;
 import NG.Blocks.Types.PieceType;
 import NG.Blocks.Types.PieceTypeJoint;
+import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.AABBi;
 import NG.Entities.Entity;
@@ -19,8 +20,7 @@ import java.io.IOException;
 import java.lang.Math;
 import java.util.*;
 
-import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
-import static NG.Blocks.Types.AbstractPiece.BLOCK_HEIGHT;
+import static NG.Blocks.Types.AbstractPiece.*;
 
 /**
  * @author Geert van Ieperen created on 20-8-2019.
@@ -31,6 +31,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     protected BucketGrid3i<AbstractPiece> blocks;
     protected AABBi bounds;
     protected float totalMass;
+    private Vector3f centerOfMass = new Vector3f();
 
     private Quaternionf rotation;
     private Float minAngle = null;
@@ -52,14 +53,31 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         PieceType type = block.getType();
         AABBi hitBox = block.getHitBox();
 
-        this.totalMass += type.mass;
         this.bounds.union(hitBox);
+
+        // get middle of the block
+        Vector3f extend = new Vector3f(type.size).div(2);
+        Vector3f blockCOM = new Vector3f(block.getPosition())
+                .sub(0.5f, 0.5f, 0.5f)
+                .add(extend)
+                .mul(BLOCK_SIZE);
+
+        for (byte i = 0; i < block.getRotationByte(); i++) {
+            //noinspection SuspiciousNameCombination
+            blockCOM.set(-blockCOM.y, blockCOM.x, blockCOM.z);
+        }
+
+        // weighted average of center of mass
+        centerOfMass.mul(totalMass)
+                .add(blockCOM.mul(type.mass));
+        this.totalMass += type.mass;
+        centerOfMass.div(totalMass);
 
         blocks.add(block, hitBox);
         return true;
     }
 
-    public void removeParent(){
+    public void removeParent() {
         root = null;
     }
 
@@ -72,7 +90,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     public void setParent(BlockSubGrid newParent, JointPiece piece, boolean maleSide) {
         assert canParent(newParent, piece, maleSide);
 
-        Vector3f piecePos = piece.getWorldPosition(newParent);
+        Vector3f piecePos = piece.getStructurePosition(newParent);
         PieceTypeJoint t = piece.getType();
         Vector3ic headPiecePos;
 
@@ -85,7 +103,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
             this.jointGridOffset = onGridPos;
             this.axis = piece.getAxis();
 
-            this.realAxis = new Vector3f(axis).rotate(newParent.getWorldRotation()).normalize();
+            this.realAxis = new Vector3f(axis).rotate(newParent.getStructureRotation()).normalize();
 
             if (t.hasAngleLimit) {
                 minAngle = maleSide ? t.minAngle : TAU - t.minAngle;
@@ -110,11 +128,14 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         rotation.rotationAxis(angle, realAxis);
     }
 
-    public Quaternionf getWorldRotation() {
-        if (root == null){
+    /**
+     * @return construction-space rotation
+     */
+    public Quaternionf getStructureRotation() {
+        if (root == null) {
             return new Quaternionf(rotation);
         } else {
-            return root.getWorldRotation().mul(rotation);
+            return root.getStructureRotation().mul(rotation);
         }
     }
 
@@ -123,7 +144,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         if (root == null) return true;
         if (parent != root) return false;
 
-        Vector3f jointPos = joint.getWorldPosition(parent);
+        Vector3f jointPos = joint.getStructurePosition(parent);
         PieceTypeJoint t = joint.getType();
 
         if (joint.getAxis() != axis) return false;
@@ -152,6 +173,10 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
 
     public float getMass() {
         return totalMass;
+    }
+
+    public Vector3fc getCenterOfMass() {
+        return centerOfMass;
     }
 
     public boolean canAttach(AbstractPiece element) {
@@ -183,8 +208,8 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     public void draw(SGL gl, Entity entity, float renderTime) {
         gl.pushMatrix();
         {
-            gl.translate(getWorldPosition());
-            gl.rotate(getWorldRotation());
+            gl.translate(getStructurePosition());
+            gl.rotate(getStructureRotation());
 
             for (AbstractPiece block : blocks) {
                 block.draw(gl, entity, renderTime);
@@ -216,24 +241,27 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
                         .newInstance(in, typeMap);
                 add(piece);
             }
-        } catch (ReflectiveOperationException ex){
+        } catch (ReflectiveOperationException ex) {
             throw new IOException(ex);
         }
     }
 
+    /**
+     * @return contruction-space hitbox
+     */
     public AABBf getHitBox() {
-        AABBf result = new AABBf();
-        Quaternionf rotation = getWorldRotation();
+        BoundingBox result = new BoundingBox();
+        Quaternionf rotation = getStructureRotation();
 
         Vector3f point = new Vector3f();
-        result.union(point.set(bounds.xMin, bounds.yMin, bounds.zMin).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMin, bounds.zMin).rotate(rotation));
-        result.union(point.set(bounds.xMin, bounds.yMax, bounds.zMin).rotate(rotation));
-        result.union(point.set(bounds.xMin, bounds.yMin, bounds.zMax).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMin).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMin, bounds.zMax).rotate(rotation));
-        result.union(point.set(bounds.xMin, bounds.yMax, bounds.zMax).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMax).rotate(rotation));
+        result.union(point.set(bounds.xMin - 1, bounds.yMin - 1, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMin - 1, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMin - 1, bounds.yMax, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMin - 1, bounds.yMin - 1, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMin - 1, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMin - 1, bounds.yMax, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
+        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
 
         return result;
     }
@@ -275,9 +303,12 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         return blocks.size();
     }
 
-    public Vector3f getWorldPosition() {
+    /**
+     * @return contruction-space position
+     */
+    public Vector3f getStructurePosition() {
         if (root == null) return new Vector3f();
-        Vector3f rootPos = root.getWorldPosition().add(rootJointOffset);
+        Vector3f rootPos = root.getStructurePosition().add(rootJointOffset);
         Vector3f offset = new Vector3f(jointGridOffset).rotate(rotation);
         return rootPos.add(offset);
     }

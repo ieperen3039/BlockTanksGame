@@ -13,17 +13,12 @@ import NG.Rendering.Shaders.ShaderProgram;
 import NG.Settings.Settings;
 import NG.Tools.Directory;
 import NG.Tools.Logger;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,6 +81,11 @@ public class ClickShader implements ShaderProgram {
     @Override
     public void initialize(Game game) {
         mapping.clear();
+    }
+
+    @Override
+    public int unif(String uniformName) {
+        return uniforms.get(uniformName);
     }
 
     @Override
@@ -166,31 +166,24 @@ public class ClickShader implements ShaderProgram {
         uniforms.put(uniformName, uniformLocation);
     }
 
-    /**
-     * Set the value of a 4x4 matrix shader uniform.
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    private void setUniform(String uniformName, Matrix4f value) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            // Dump the matrix into a float buffer
-            FloatBuffer fb = stack.mallocFloat(16);
-            value.get(fb);
-            glUniformMatrix4fv(uniforms.get(uniformName), false, fb);
-        }
-    }
-
-    private void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
-        setUniform("viewProjectionMatrix", viewProjectionMatrix);
-    }
-
-    private void setModelMatrix(Matrix4f modelMatrix) {
-        setUniform("modelMatrix", modelMatrix);
-    }
-
     protected void setColor(Vector3i color) {
         Vector3f toFloats = new Vector3f(color).div(255);
         glUniform4f(uniforms.get("color"), toFloats.x, toFloats.y, toFloats.z, 1);
+    }
+
+    @Override
+    public void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
+        setUniform("viewProjectionMatrix", viewProjectionMatrix);
+    }
+
+    @Override
+    public void setModelMatrix(Matrix4f modelMatrix) {
+        setUniform("modelMatrix", modelMatrix);
+    }
+
+    @Override
+    public void setNormalMatrix(Matrix3f normalMatrix) {
+        // ignore
     }
 
     private static Vector3i numberToColor(int i) {

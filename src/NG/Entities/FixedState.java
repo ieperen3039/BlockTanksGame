@@ -84,9 +84,8 @@ public class FixedState implements State {
      * changes the time of this state. This is only effective when using {@link State#interpolateFraction(State, float)}
      * @param gameTime the new time of this state.
      */
-    public FixedState update(float gameTime) {
+    public void update(float gameTime) {
         this.time = gameTime;
-        return this;
     }
 
     @Override

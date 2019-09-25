@@ -38,9 +38,9 @@ public class FollowingCamera implements Camera {
         this.target = target;
     }
 
-    public FollowingCamera(Entity target){
+    public FollowingCamera(Entity target, int gameTime){
         this.target = target;
-        State state = target.getPhysicsState();
+        State state = target.getStateAt(gameTime);
         Vector3f targetEye = new Vector3f(eyeRelative).rotate(state.orientation());
         Vector3fc targetUp = Vectors.newZ().rotate(state.orientation());
         this.eye = new ExponentialSmoothVector(targetEye, EYE_PRESERVE);
@@ -77,7 +77,7 @@ public class FollowingCamera implements Camera {
 
         // prevent looking through walls;
         if (game.has(GameState.class)) {
-            Float fraction = game.get(GameState.class).getEntityByRay(targetPos, targetEye).right;
+            Float fraction = game.get(GameState.class).getEntityByRay(targetPos, targetEye, renderTime).right;
             if (fraction < 1) targetEye.mul(fraction);
         }
 

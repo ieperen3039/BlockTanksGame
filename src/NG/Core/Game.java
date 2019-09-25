@@ -196,5 +196,10 @@ public interface Game extends Iterable<Object> {
         public Iterator<Object> iterator() {
             return current.iterator();
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + " " + current;
+        }
     }
 }

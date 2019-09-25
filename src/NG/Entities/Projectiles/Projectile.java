@@ -54,12 +54,12 @@ public abstract class Projectile extends MovingEntity {
     protected abstract void drawProjectile(SGL gl, float renderTime);
 
     @Override
-    public BoundingBox getHitbox() {
+    public BoundingBox getHitbox(float time) {
         return zeroBox;
     }
 
     @Override
-    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
+    public List<Vector3f> getShapePoints(List<Vector3f> dest, float gameTime) {
         if (dest.size() != 1) dest = Collections.singletonList(new Vector3f());
 
         state.position().toVector3f(dest.get(0));

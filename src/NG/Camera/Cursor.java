@@ -21,7 +21,7 @@ public class Cursor extends DummyEntity {
     }
 
     @Override
-    public State getPhysicsState() {
+    public State getStateAt(float time) {
         return positionSupplier.get();
     }
 
@@ -35,7 +35,7 @@ public class Cursor extends DummyEntity {
 
     @Override
     public void writeToDataStream(DataOutputStream out) throws IOException {
-        Storable.write(out, getPhysicsState());
+        Storable.write(out, getStateAt(0));
     }
 
     Cursor(DataInputStream in) throws IOException, ClassNotFoundException {

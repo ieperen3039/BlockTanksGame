@@ -6,20 +6,22 @@ import NG.Tools.Logger;
 import java.io.File;
 import java.io.IOException;
 
+import static org.lwjgl.opengl.GL11.*;
+
 /**
  * @author Geert van Ieperen created on 1-2-2019.
  */
-public enum GenericTextures implements Texture {
+public enum GenericTextures implements Texture2D {
     CHECKER("..", "check.png"),
     ;
 
-    private Texture tex;
+    private Texture2D tex;
 
     GenericTextures(String... path) {
         File file = Directory.meshes.getFile(path);
 
         try {
-            tex = FileTexture.get(file);
+            tex = ColorTexture.get(file);
         } catch (IOException ex) {
             Logger.ERROR.print(ex);
             tex = null;
@@ -44,5 +46,11 @@ public enum GenericTextures implements Texture {
     @Override
     public int getHeight() {
         return tex.getHeight();
+    }
+
+    @Override
+    public void setClamp(ClampMethod p){
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, p.glValue);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, p.glValue);
     }
 }

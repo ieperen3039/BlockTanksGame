@@ -51,8 +51,7 @@ public class GameService implements Game {
             }
         }
 
-        List<String> elts = elements.stream().map(p -> p.right).map(Class::getSimpleName).collect(Collectors.toList());
-        throw new NoSuchElementException(String.format("No element of %s :\n%s", target.toString(), elts));
+        throw new NoSuchElementException(String.format("No element of %s :\n%s", target.toString(), this.toString()));
     }
 
     @Override
@@ -136,6 +135,15 @@ public class GameService implements Game {
     @Override
     public Version getVersion() {
         return version;
+    }
+
+    @Override
+    public String toString() {
+        List<String> elts = elements.stream()
+                .map(p -> p.right)
+                .map(Class::getSimpleName)
+                .collect(Collectors.toList());
+        return getClass().getSimpleName() + elts;
     }
 
     @Override

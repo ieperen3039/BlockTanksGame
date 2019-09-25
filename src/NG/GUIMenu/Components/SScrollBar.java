@@ -41,7 +41,7 @@ class SScrollBar extends SComponent {
      * @param current the output value to start with
      */
     public SScrollBar(int minimum, int maximum, int current) {
-        assert maximum > minimum;
+        assert maximum >= minimum;
         assert current >= minimum;
         assert current <= maximum;
 
@@ -61,7 +61,7 @@ class SScrollBar extends SComponent {
     }
 
     public SScrollBar(int totalElts, int shownElts) {
-        this(0, Math.max(1, totalElts - shownElts), 0);
+        this(0, Math.max(0, totalElts - shownElts), 0);
         this.barSizeFraction = Math.min(1, (float) shownElts / totalElts);
     }
 
@@ -87,6 +87,7 @@ class SScrollBar extends SComponent {
 
     private void alignDragBar() {
         dragBarOffsetFraction = (float) (currentInd - minimumInd) / (maximumInd - minimumInd);
+        if (Float.isNaN(dragBarOffsetFraction)) dragBarOffsetFraction = 0;
         positionDragbar(dragBarOffsetFraction);
     }
 
@@ -104,6 +105,8 @@ class SScrollBar extends SComponent {
     }
 
     private void positionDragbar(float fraction) {
+        assert fraction >= 0 : fraction;
+        assert fraction <= 1 : fraction;
         int dragBarSpace = getDragBarSpace();
         if (dragBarSpace > 0) {
             dragBar.setSize(SCROLL_BAR_WIDTH, (int) (dragBarSpace * barSizeFraction));

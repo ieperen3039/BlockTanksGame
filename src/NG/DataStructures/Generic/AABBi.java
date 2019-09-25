@@ -74,7 +74,7 @@ public class AABBi {
         return !(xOk || yOk || zOk);
     }
 
-    public Vector3ic size() {
+    public Vector3ic dimensions() {
         return new Vector3i(xMax - xMin, yMax - yMin, zMax - zMin);
     }
 

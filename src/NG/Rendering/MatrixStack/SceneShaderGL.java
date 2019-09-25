@@ -66,7 +66,7 @@ public class SceneShaderGL extends AbstractSGL {
 
     @Override
     public String toString() {
-        return "ShaderUniformGL {\n" +
+        return getClass().getName() + " {\n" +
                 "modelMatrix=" + getModelMatrix() +
                 ", viewProjectionMatrix=" + viewProjectionMatrix +
                 ", normalMatrix=" + normalMatrix +

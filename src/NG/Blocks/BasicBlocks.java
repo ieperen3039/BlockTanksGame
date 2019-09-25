@@ -116,7 +116,7 @@ public class BasicBlocks implements PieceTypeCollection {
 
     @Override
     public String getCategory() {
-        return "Cube Constructions";
+        return "Floating Bricks";
     }
 
     public PieceType getByName(String name) {

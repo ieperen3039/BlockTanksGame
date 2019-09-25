@@ -14,6 +14,7 @@ import java.lang.Math;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * @author Geert van Ieperen created on 28-2-2019.
@@ -363,10 +364,12 @@ public class MeshFile implements Storable {
 
         List<Mesh.Face> faceList = getFaces();
         int[] ptr = new int[2];
-        Logger.printOnline(() -> String.format(
+        Supplier<String> divideMapUpdate = () -> String.format(
                 "dividing map: %d/%d (%1.01f%%) (added %d faces)",
-                ptr[0], faceList.size(), (ptr[0] * 100f / faceList.size()), ptr[1])
+                ptr[0], faceList.size(), (ptr[0] * 100f / faceList.size()), ptr[1]
         );
+
+        Logger.printOnline(divideMapUpdate);
         for (int j = 0; j < faceList.size(); j++) {
             ptr[0] = j;
             ptr[1] = bloat;
@@ -417,7 +420,10 @@ public class MeshFile implements Storable {
             }
             bloat--;
         }
-        if (doExact) Logger.DEBUG.printf("Mesh split: Increased number of faces by %1.02f%%", 100f * bloat / faces.size());
+        if (doExact) {
+            Logger.DEBUG.printf("Mesh split: Increased number of faces by %1.02f%%", 100f * bloat / faces.size());
+        }
+        Logger.removeOnlinePrint(divideMapUpdate);
         return world;
     }
 
@@ -429,7 +435,7 @@ public class MeshFile implements Storable {
 
     public static final MeshFile EMPTY_FILE = new MeshFile("empty", Collections.emptyList(), Collections.emptyList(),
             Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
-    ){
+    ) {
         @Override
         public Mesh getMesh() {
             return FlatMesh.EMPTY_MESH;

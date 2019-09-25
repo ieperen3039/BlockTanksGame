@@ -17,7 +17,7 @@ import NG.Rendering.Shaders.MaterialShader;
 import NG.Rendering.Shaders.PhongShader;
 import NG.Rendering.Shaders.SceneShader;
 import NG.Rendering.Shaders.TextureShader;
-import NG.Rendering.Textures.Texture;
+import NG.Rendering.Textures.Texture2D;
 import NG.Settings.Settings;
 import NG.Shapes.GenericShapes;
 import NG.Tools.*;
@@ -57,16 +57,16 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
         Settings settings = game.get(Settings.class);
 
         overlay.init(settings.ANTIALIAS_LEVEL);
-        overlay.addHudItem((painter) -> {
-            if (settings.DEBUG_SCREEN) {
-                Logger.putOnlinePrint(painter::printRoll);
-            }
-        });
 
         overlay.addHudItem((painter) ->
                 game.getAll(HUDManager.class)
                         .forEach(h -> h.draw(painter))
         );
+        overlay.addHudItem((painter) -> {
+            if (settings.DEBUG_SCREEN) {
+                Logger.putOnlinePrint(painter::printRoll);
+            }
+        });
 
         uiShader = new PhongShader();
 
@@ -121,7 +121,7 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
         int windowHeight = window.getHeight();
 
         timeObserver.startTiming("GUI");
-        overlay.draw(windowWidth, windowHeight, windowWidth - 1000, 10, 16);
+        overlay.draw(windowWidth, windowHeight, 10, 10, 16);
         timeObserver.endTiming("GUI");
 
         // update window
@@ -140,7 +140,7 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
         overlay.cleanup();
     }
 
-    private void dumpTexture(Texture texture, String fileName) {
+    private void dumpTexture(Texture2D texture, String fileName) {
         assert (uiShader instanceof TextureShader);
         GLFWWindow window = game.get(GLFWWindow.class);
 

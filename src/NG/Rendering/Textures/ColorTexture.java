@@ -19,15 +19,15 @@ import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 /**
  * @author Cas Wognum (TU/e, 1012585)
  */
-public class FileTexture implements Texture {
-    private static Map<File, FileTexture> loadedMeshes = new HashMap<>();
+public class ColorTexture implements Texture2D {
+    private static Map<File, ColorTexture> loadedMeshes = new HashMap<>();
 
     private final int id;
 
     private final int width;
     private final int height;
 
-    private FileTexture(File file) throws IOException {
+    private ColorTexture(File file) throws IOException {
         FileInputStream in = new FileInputStream(file);
         PNGDecoder image = new PNGDecoder(in);
 
@@ -82,20 +82,27 @@ public class FileTexture implements Texture {
         return height;
     }
 
-    public static FileTexture get(File file) throws IOException {
+    @Override
+    public void setClamp(ClampMethod p){
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, p.glValue);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, p.glValue);
+    }
+
+    public static ColorTexture get(File file) throws IOException {
         if (!file.exists()) throw new FileNotFoundException("Texture file does not exists: " + file);
 
-        FileTexture tex = loadedMeshes.get(file);
+        ColorTexture tex = loadedMeshes.get(file);
 
         if (tex == null) {
-            tex = new FileTexture(file);
+            tex = new ColorTexture(file);
             loadedMeshes.put(file, tex);
         }
 
         return tex;
     }
 
-    public static Texture get(Path texturePath) throws IOException {
+    public static Texture2D get(Path texturePath) throws IOException {
         return texturePath == null ? null : get(texturePath.toFile());
     }
 }

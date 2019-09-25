@@ -26,7 +26,7 @@ public abstract class DummyEntity extends StaticEntity {
     }
 
     @Override
-    public BoundingBox getHitbox() {
+    public BoundingBox getHitbox(float time) {
         return new BoundingBox(
                 Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY,
                 Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY
@@ -39,7 +39,7 @@ public abstract class DummyEntity extends StaticEntity {
     }
 
     @Override
-    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
+    public List<Vector3f> getShapePoints(List<Vector3f> dest, float gameTime) {
         dest.clear();
         return dest;
     }

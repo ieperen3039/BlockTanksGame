@@ -5,7 +5,7 @@ import NG.Core.Game;
 import NG.DataStructures.Generic.Color4f;
 import NG.Rendering.Lights.DirectionalLight;
 import NG.Rendering.Textures.GenericTextures;
-import NG.Rendering.Textures.Texture;
+import NG.Rendering.Textures.Texture2D;
 import NG.Settings.Settings;
 import NG.Tools.Directory;
 import org.joml.Vector3f;
@@ -132,7 +132,7 @@ public class BlinnPhongShader extends SceneShader implements TextureShader {
     }
 
     @Override
-    public void setTexture(Texture tex) {
+    public void setTexture(Texture2D tex) {
         if (tex != null) {
             setUniform("hasTexture", true);
             tex.bind(GL_TEXTURE0);

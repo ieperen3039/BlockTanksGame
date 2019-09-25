@@ -43,12 +43,13 @@ public abstract class AbstractChunk extends StaticEntity implements MapChunk {
 
     @Override
     public void loadMesh() {
+        if (mesh != null) return;
         mesh = meshFile.getMesh();
         meshFile = null;
     }
 
     @Override
-    public BoundingBox getHitbox() {
+    public BoundingBox getHitbox(float time) {
         return boundingBox;
     }
 
@@ -60,7 +61,7 @@ public abstract class AbstractChunk extends StaticEntity implements MapChunk {
     }
 
     @Override
-    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
+    public List<Vector3f> getShapePoints(List<Vector3f> dest, float gameTime) {
         List<Vector3fc> points = shape.getPoints();
 
         int nrOfPoints = points.size();
@@ -88,7 +89,7 @@ public abstract class AbstractChunk extends StaticEntity implements MapChunk {
 
     @Override
     public void dispose() {
-        mesh.dispose();
+        if (mesh != null) mesh.dispose();
         super.dispose();
     }
 }

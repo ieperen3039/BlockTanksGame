@@ -26,7 +26,9 @@ public enum GenericShapes implements Mesh, Shape {
     TEXTURED_QUAD("general", "quad.obj"),
 
     /** a quad of size 2x2 on the xy plane */
-    QUAD(makeSingleQuad());
+    QUAD(makeSingleQuad()),
+
+    ;
 
     private MeshFile pars;
     private Mesh mesh = null;

@@ -154,4 +154,16 @@ public class BoundingBox extends AABBf {
     public Vector3f size() {
         return new Vector3f(maxX - minX, maxY - minY, maxZ - minZ);
     }
+
+    public void unionRotated(AABBf other, Quaternionf rotation) {
+        Vector3f point = new Vector3f();
+        union(point.set(other.minX, other.minY, other.minZ).rotate(rotation));
+        union(point.set(other.maxX, other.minY, other.minZ).rotate(rotation));
+        union(point.set(other.minX, other.maxY, other.minZ).rotate(rotation));
+        union(point.set(other.minX, other.minY, other.maxZ).rotate(rotation));
+        union(point.set(other.maxX, other.maxY, other.minZ).rotate(rotation));
+        union(point.set(other.maxX, other.minY, other.maxZ).rotate(rotation));
+        union(point.set(other.minX, other.maxY, other.maxZ).rotate(rotation));
+        union(point.set(other.maxX, other.maxY, other.maxZ).rotate(rotation));
+    }
 }

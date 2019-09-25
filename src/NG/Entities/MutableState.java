@@ -5,7 +5,6 @@ import NG.DataStructures.Vector3fxc;
 import NG.Storable;
 import NG.Tools.Toolbox;
 import org.joml.Quaternionf;
-import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -23,6 +22,9 @@ public class MutableState implements State {
     private Vector3f velocity;
     private Quaternionf orientation;
     private Quaternionf rotationSpeed;
+
+    private Vector3f netForce = new Vector3f();
+    private Vector3f netTorque = new Vector3f();
 
     public MutableState(float time, Vector3fxc position, Vector3fc velocity, Quaternionf orientation) {
         this(time, position, velocity, orientation, new Quaternionf());
@@ -80,18 +82,30 @@ public class MutableState implements State {
     }
 
     @Override
-    public MutableState update(float gameTime) {
-        float deltaTime = gameTime - time;
+    public void update(float gameTime) {
+        updateAround(gameTime, position);
+    }
 
+    public void updateAround(float gameTime, Vector3fxc center){
+        float deltaTime = gameTime - time;
+        Vector3fx vecToCenter = new Vector3fx(center).sub(position);
+
+        velocity.add(netForce.mul(deltaTime));
         Vector3f movement = new Vector3f(velocity).mul(deltaTime);
         position.add(movement);
 
-        Quaternionf rotation = new Quaternionf(rotationSpeed).scale(deltaTime);
-        orientation.add(rotation);
+        netTorque.mul(deltaTime);
+        rotationSpeed.rotateXYZ(netTorque.x(), netTorque.y(), netTorque.z());
+        Quaternionf rotation = new Quaternionf().nlerp(rotationSpeed, deltaTime).normalize();
+        Vector3fx newVecToCenter = new Vector3fx(vecToCenter).rotate(rotation);
+        Vector3fx centerMove = newVecToCenter.sub(vecToCenter);
+
+        orientation.mul(rotation);
+        position.add(centerMove);
 
         time = gameTime;
-
-        return this;
+        netForce.zero();
+        netTorque.zero();
     }
 
     public void set(State source) {
@@ -109,23 +123,30 @@ public class MutableState implements State {
     }
 
     /**
-     * Adds the given velocity and rotational velocity to this state. During a physics update, the correct order of
-     * updating is {@code this.add(velocityChange, rotationSpeedChange)}{@link #update(float) .update(gameTime)}.
-     *
-     * @param velocityChange      the change in velocity
-     * @param rotationSpeedChange the change in rotation speed
+     * Applies the given force to this state. At the next call of {@link #update(float)}, the accumulated forces are
+     * applied and reset to zero.
+     * @param force a force vector on this state
      * @return this
      */
-    public MutableState add(Vector3fc velocityChange, Quaternionfc rotationSpeedChange) {
-        velocity.add(velocityChange);
-        rotationSpeed.add(rotationSpeedChange);
+    public MutableState addForce(Vector3fc force) {
+        netForce.add(force);
+        return this;
+    }
 
+    /**
+     * Applies the given torque to this state. At the next call of {@link #update(float)}, the accumulated forces are
+     * applied to the rotation and reset to zero.
+     * @param torqueVector a vector with the torque components.
+     * @return this
+     */
+    public MutableState addRotation(Vector3fc torqueVector) {
+        netTorque.add(torqueVector);
         return this;
     }
 
     /**
      * sets the new velocity
-     * @param newVelocity      the change in velocity
+     * @param newVelocity the change in velocity
      * @return this
      */
     public MutableState setVelocity(Vector3fc newVelocity) {
@@ -158,4 +179,5 @@ public class MutableState implements State {
         rotationSpeed = Storable.readQuaternionf(in);
         time = in.readFloat();
     }
+
 }

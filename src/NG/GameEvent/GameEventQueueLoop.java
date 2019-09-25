@@ -53,7 +53,7 @@ public class GameEventQueueLoop extends AbstractGameLoop implements Storable, Ev
         float gameTime = timer.getGametime();
 
         if (eventQueue.isEmpty()) {
-            state.update(gameTime);
+            state.update(gameTime, deltaTime);
             return;
         }
 
@@ -65,7 +65,7 @@ public class GameEventQueueLoop extends AbstractGameLoop implements Storable, Ev
 
         while (eventTime < gameTime) {
             if (eventTime > updateTime) {
-                state.update(eventTime);
+                state.update(eventTime, deltaTime);
                 updateTime = eventTime;
 
                 lockQueueRead.lock();
@@ -92,7 +92,7 @@ public class GameEventQueueLoop extends AbstractGameLoop implements Storable, Ev
             eventTime = next.getTime();
         }
 
-        state.update(gameTime);
+        state.update(gameTime, deltaTime);
     }
 
     @Override

@@ -1,51 +1,28 @@
 {
-  "manufacturer" : "Jeb's Junkyard",
-  "slogan" : "Space-grade materials for a junk price!",
+  "manufacturer" : "Pivot Productions",
+  "slogan" : "A true turning point in Naval Technology",
+  "internal slogan" : "THREESICKSTY-NOSCOPE THAT B*TCH",
 
   "blocks" : {
-      "Small half wheelbase" : {
-        "graphic" : "wheel_hinge_121_half.ply",
-        "size" : [3, 1, 1],
-        "mass" : 3.0,
-        "topPoints" : [
-          [0, 0, 1], [1, 0, 1]
-        ],
-        "bottomPoints" : [
-          [0, 0, 0], [1, 0, 0]
-        ],
-        "wheelConnections" : [{
-          "size" : 0.0016,
-          "hingeOffset" : [0.0166, 0.004, 0.0016],
-          "axis" : "x"
-        }]
-      },
-
-      "connection14" : {
-        "size" : [1, 4, 0],
-        "topPoints" : [
-          [0, 0, 0], [0, 1, 0], [0, 2, 0], [0, 3, 0]
-        ],
-        "hidden" : true
-      }
+    "connection14" : {
+      "description" : "The company's first attempt on a joint. It failed successfully.",
+      "size" : [1, 4, 0],
+      "topPoints" : [
+        [0, 0, 0], [0, 1, 0], [0, 2, 0], [0, 3, 0]
+      ],
+      "hidden" : true
+    }
   },
 
   "joints" : {
-      "Corner 1x4x3" : {
-        "bottom" : [1, 4, 3],
-        "top" : "connection14",
-        "axis" : "y",
-        "minAngle" : 90,
-        "maxAngle" : 90,
-        "jointOffset" : [0.0, 0.0, 0.0056],
-        "headOffset" : [0.0, 0.0, 0.004]
-      }
-  },
-
-  "wheels" : {
-    "Wheel small" : {
-      "graphic" : "wheel_small.ply",
-      "radius" : 1.5,
-      "mass" : 2
+    "Corner 1x4x3" : {
+      "bottom" : [1, 4, 3],
+      "top" : "connection14",
+      "axis" : "y",
+      "minAngle" : 90,
+      "maxAngle" : 90,
+      "jointOffset" : [0.0, 0.0, 0.0056],
+      "headOffset" : [0.0, 0.0, 0.004]
     }
   }
 }

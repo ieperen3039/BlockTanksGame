@@ -46,12 +46,6 @@ public class PhongShader extends SceneShader {
         setUniform("ambientLight", Settings.AMBIENT_LIGHT.toVector3f());
         setUniform("cameraPosition", eye);
 
-        prepLights();
-    }
-
-    private void prepLights() { // TODO inline
-        nextLightIndex = 0;
-        discardRemainingLights();
         nextLightIndex = 0;
     }
 

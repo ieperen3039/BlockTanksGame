@@ -37,9 +37,8 @@ public interface State extends Storable {
     /**
      * Extrapolates this state for the given gameTime and updates this state accordingly. Modifies this state
      * @param gameTime the time of the updated state
-     * @return this
      */
-    State update(float gameTime);
+    void update(float gameTime);
 
     default State interpolateTime(State other, float gameTime) {
         float fraction = (time() - other.time()) / (time() - gameTime);

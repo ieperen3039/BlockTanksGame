@@ -3,13 +3,13 @@ package NG.CollisionDetection;
 import NG.Camera.Camera;
 import NG.Core.Game;
 import NG.Core.GameTimer;
-import NG.DataStructures.Vector3fxc;
 import NG.Entities.Entity;
 import NG.Entities.MovingEntity;
 import NG.InputHandling.ClickShader;
 import NG.InputHandling.MouseTools.MouseTool;
 import NG.Rendering.GLFWWindow;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Settings.Settings;
 import NG.Storable;
 import NG.Tools.Vectors;
 import org.joml.FrustumIntersection;
@@ -19,14 +19,12 @@ import org.joml.Vector3f;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author Geert van Ieperen created on 17-8-2019.
  */
-public abstract class AbstractState implements GameState {
+public abstract class AbstractGameState implements GameState {
     private Game game;
 
     @Override
@@ -42,12 +40,9 @@ public abstract class AbstractState implements GameState {
                 .getViewProjection((float) window.getWidth() / window.getHeight());
         FrustumIntersection fic = new FrustumIntersection().set(viewProjection, false);
 
-        entities().forEach(e -> {
-            Vector3fxc position = e.getStateAt(rendertime).position();
-            BoundingBox box = e.getHitbox().move(position);
-
-            if (box.testFustrum(fic)) {
-                e.draw(gl, rendertime);
+        entities().forEach(ety -> {
+            if (game.get(Settings.class).DEBUG || ety.getHitbox(rendertime).testFustrum(fic)) {
+                ety.draw(gl, rendertime);
             }
         });
     }
@@ -64,7 +59,8 @@ public abstract class AbstractState implements GameState {
             Vector3f direction = new Vector3f();
             Vectors.windowCoordToRay(game, xSc, ySc, origin, direction);
 
-            entity = getEntityByRay(origin, direction).left;
+            float rendertime = game.get(GameTimer.class).getRendertime();
+            entity = getEntityByRay(origin, direction, rendertime).left;
         }
 
         if (entity == null) return false;
@@ -75,14 +71,7 @@ public abstract class AbstractState implements GameState {
 
     @Override
     public void writeToDataStream(DataOutputStream out) throws IOException {
-        Collection<Entity> entities = entities();
-        List<Storable> box = new ArrayList<>(entities.size());
-
-        for (Entity e : entities) {
-            if (e instanceof Storable) {
-                box.add((Storable) e);
-            }
-        }
+        Collection<? extends Storable> box = entities();
 
         out.writeInt(box.size());
         for (Storable s : box) {

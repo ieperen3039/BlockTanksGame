@@ -45,13 +45,13 @@ public class SingleShadowMapLights implements GameLights {
     private float lightDist = 1;
     private boolean staticMapIsDirty = false;
 
-    public SingleShadowMapLights() {
+    public SingleShadowMapLights(int staticResolution, int dynamicResolution) {
         ReadWriteLock rwl = new ReentrantReadWriteLock(false);
         this.pointLightEditLock = rwl.writeLock();
         this.pointLightReadLock = rwl.readLock();
 
         this.lights = new ArrayList<>();
-        this.sunLight = new DirectionalLight(Color4f.WHITE, new Vector3f(1, -1, 1), 0.5f);
+        this.sunLight = new DirectionalLight(Color4f.WHITE, new Vector3f(1, -1, 1), 0.5f, staticResolution, dynamicResolution);
     }
 
     @Override
@@ -162,6 +162,9 @@ public class SingleShadowMapLights implements GameLights {
     public void writeToDataStream(DataOutputStream out) throws IOException {
         pointLightReadLock.lock();
         try {
+            out.writeInt(sunLight.getStaticShadowMap().getResolution());
+            out.writeInt(sunLight.getDynamicShadowMap().getResolution());
+
             out.writeInt(lights.size());
             for (PointLight light : lights) {
                 Storable.writeVector3f(out, light.getPosition());
@@ -175,7 +178,7 @@ public class SingleShadowMapLights implements GameLights {
     }
 
     public SingleShadowMapLights(DataInputStream in) throws IOException {
-        this();
+        this(in.readInt(), in.readInt());
 
         try {
             int lightsSize = in.readInt();

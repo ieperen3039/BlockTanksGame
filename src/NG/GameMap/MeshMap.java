@@ -225,7 +225,7 @@ public class MeshMap extends AbstractMap {
                     if (isMaterialShader) ((MaterialShader) shader).setMaterial(Material.ROUGH, Color4f.rgb(
                             rand.nextInt(255), rand.nextInt(255), rand.nextInt(255), 1));
 
-                    boolean isVisible = chunk.getHitbox().testFustrum(fic);
+                    boolean isVisible = chunk.getHitbox(0).testFustrum(fic);
 
                     if (isVisible) {
                         chunk.draw(gl, renderTime);
@@ -311,7 +311,7 @@ public class MeshMap extends AbstractMap {
         }
 
         @Override
-        public void preUpdate(float gameTime) {
+        public void preUpdate(float gameTime, float deltaTime) {
 
         }
     }

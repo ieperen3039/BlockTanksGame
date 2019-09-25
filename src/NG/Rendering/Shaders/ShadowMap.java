@@ -1,6 +1,6 @@
 package NG.Rendering.Shaders;
 
-import NG.Rendering.Textures.Texture;
+import NG.Rendering.Textures.Texture2D;
 
 import java.nio.ByteBuffer;
 
@@ -13,7 +13,7 @@ import static org.lwjgl.opengl.GL30.*;
  * @author Dungeons-and-Drawings group
  */
 @SuppressWarnings("Duplicates")
-public class ShadowMap implements Texture {
+public class ShadowMap implements Texture2D {
     private final int resolution;
     private final int depthMapFBO;
     private final int depthMap;
@@ -86,5 +86,11 @@ public class ShadowMap implements Texture {
         glViewport(0, 0, resolution, resolution);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
+    }
+
+    @Override
+    public void setClamp(ClampMethod p){
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, p.glValue);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, p.glValue);
     }
 }

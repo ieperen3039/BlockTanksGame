@@ -83,6 +83,7 @@ public class CollisionDetection {
         int i = 0;
         for (Entity entity : entities) {
             CollisionEntity asCollisionEntity = new CollisionEntity(entity);
+            asCollisionEntity.update(previousTime);
             xLowerSorted[i] = asCollisionEntity;
             yLowerSorted[i] = asCollisionEntity;
             zLowerSorted[i] = asCollisionEntity;
@@ -274,12 +275,13 @@ public class CollisionDetection {
      * calculates the first entity hit by the given ray
      * @param origin the origin of the ray
      * @param dir    the direction of the ray
+     * @param gameTime
      * @return Left: the first entity hit by the ray, or null if no entity is hit.
      * <p>
      * Right: the fraction t such that {@code origin + t * dir} gives the point of collision with this entity. Undefined
      * if {@code left == null}
      */
-    public Pair<Entity, Float> rayTrace(Vector3fc origin, Vector3fc dir) {
+    public Pair<Entity, Float> rayTrace(Vector3fc origin, Vector3fc dir, float gameTime) {
         assert testInvariants();
 
         RayAabIntersection sect = new RayAabIntersection(origin.x(), origin.y(), origin.z(), dir.x(), dir.y(), dir.z());
@@ -296,7 +298,7 @@ public class CollisionDetection {
 
             Entity entity = elt.entity;
 
-            float f = entity.getHitbox().intersectRay(origin, dir);
+            float f = entity.getHitbox(gameTime).intersectRay(origin, dir);
             if (f < fraction) {
                 fraction = f;
                 suspect = entity;
@@ -411,22 +413,29 @@ public class CollisionDetection {
 
         private BoundingBox nextBoundingBox;
         private AABBf hitbox; // combined of both states
+        private float lastUpdateTime = -1;
 
         public CollisionEntity(Entity source) {
             this.entity = source;
-            prevPoints = entity.getShapePoints();
         }
 
         public void update(float gameTime) {
-            entity.preUpdate(gameTime);
+            entity.preUpdate(gameTime, gameTime - lastUpdateTime);
+            if (lastUpdateTime == -1){
+                prevPoints = entity.getShapePoints(gameTime);
+                nextPoints = entity.getShapePoints(gameTime);
+                nextBoundingBox = entity.getHitbox(gameTime);
 
-            List<Vector3f> buffer = prevPoints;
-            prevPoints = nextPoints;
-            nextPoints = entity.getShapePoints(buffer);
+            } else {
+                List<Vector3f> buffer = prevPoints;
+                prevPoints = nextPoints;
+                nextPoints = entity.getShapePoints(buffer, gameTime);
+            }
+            lastUpdateTime = gameTime;
 
             Vector3fxc nextPos = entity.getStateAt(gameTime).position();
             BoundingBox prevBoundingBox = nextBoundingBox;
-            nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
+            nextBoundingBox = entity.getHitbox(gameTime).move(nextPos.toVector3f());
 
             hitbox = prevBoundingBox.union(nextBoundingBox);
         }
@@ -435,9 +444,9 @@ public class CollisionDetection {
          * update this element without progressing time (for when the entity has changed state this tick)
          */
         public void update() {
-            nextPoints = entity.getShapePoints(nextPoints);
-            Vector3fxc nextPos = entity.getPhysicsState().position();
-            nextBoundingBox = entity.getHitbox().move(nextPos.toVector3f());
+            nextPoints = entity.getShapePoints(nextPoints, lastUpdateTime);
+            Vector3fxc nextPos = entity.getStateAt(lastUpdateTime).position();
+            nextBoundingBox = entity.getHitbox(lastUpdateTime).move(nextPos.toVector3f());
 
             hitbox = hitbox.union(nextBoundingBox);
         }

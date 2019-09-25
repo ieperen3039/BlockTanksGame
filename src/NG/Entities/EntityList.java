@@ -1,6 +1,6 @@
 package NG.Entities;
 
-import NG.CollisionDetection.AbstractState;
+import NG.CollisionDetection.AbstractGameState;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.Pair;
 import org.joml.Vector3fc;
@@ -11,16 +11,16 @@ import java.util.Collection;
 /**
  * @author Geert van Ieperen created on 17-8-2019.
  */
-public class EntityList extends AbstractState {
+public class EntityList extends AbstractGameState {
     private Collection<Entity> entities = new ArrayList<>();
 
     @Override
-    public void update(float gameTime) {
+    public void update(float gameTime, float deltaTime) {
 
     }
 
     @Override
-    public Pair<Entity, Float> getEntityByRay(Vector3fc origin, Vector3fc dir) {
+    public Pair<Entity, Float> getEntityByRay(Vector3fc origin, Vector3fc dir, float gameTime) {
         Collision earliest = Collision.SCALAR_ONE;
         Entity ety = null;
 

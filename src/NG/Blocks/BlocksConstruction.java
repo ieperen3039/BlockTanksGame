@@ -1,6 +1,8 @@
 package NG.Blocks;
 
-import NG.Blocks.Types.*;
+import NG.Blocks.Types.AbstractPiece;
+import NG.Blocks.Types.JointPiece;
+import NG.Blocks.Types.PieceType;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.Color4f;
@@ -12,7 +14,8 @@ import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MatrixStack.ShadowMatrix;
 import NG.Storable;
-import NG.Tools.Logger;
+import NG.Tools.BuoyancyComputation;
+import NG.Tools.Toolbox;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -31,7 +34,7 @@ import java.util.List;
  * @author Geert van Ieperen created on 14-8-2019.
  */
 public class BlocksConstruction extends MovingEntity {
-    private boolean isDisposed = false;
+    public static final float UNIT_MASS_TO_GRAVITY = 0.1f;
     private List<BlockSubGrid> subgrids = new ArrayList<>();
 
     public BlocksConstruction(Vector3fxc position, Quaternionf rotation, float gameTime) {
@@ -44,12 +47,51 @@ public class BlocksConstruction extends MovingEntity {
     }
 
     @Override
+    public void preUpdate(float gameTime, float deltaTime) {
+        BuoyancyComputation buoy = new BuoyancyComputation();
+        Vector3fc thisPosition = state.position().toVector3f();
+
+        for (BlockSubGrid grid : subgrids) {
+            for (AbstractPiece piece : grid) {
+                Vector3f pos = piece.getStructurePosition(grid).add(thisPosition);
+                Vector3ic dim = piece.getType().size;
+                int volume = dim.x() * dim.y() * dim.z();
+                buoy.addPointVolume(pos, volume);
+            }
+        }
+
+        float mass = getMass();
+        Vector3f rotationForce = buoy.getRotationXYZ(getCenterOfMass(), mass);
+        state.addRotation(rotationForce);
+
+        float upForce = buoy.getFloatForce();
+        state.addForce(new Vector3f(0, 0, (upForce - mass) * UNIT_MASS_TO_GRAVITY));
+
+        super.preUpdate(gameTime, deltaTime);
+    }
+
+    @Override
     public float getMass() {
         float sum = 0f;
         for (BlockSubGrid subgrid : subgrids) {
             sum += subgrid.getMass();
         }
         return sum;
+    }
+
+    @Override
+    public Vector3f getCenterOfMass() {
+        Vector3f COM = new Vector3f();
+        float totalMass = 0;
+
+        for (BlockSubGrid grid : subgrids) {
+            float mass = grid.getMass();
+            Vector3fc weighted = new Vector3f(grid.getCenterOfMass()).mul(mass);
+            COM.add(weighted);
+            totalMass += mass;
+        }
+
+        return COM.div(totalMass);
     }
 
     @Override
@@ -60,6 +102,8 @@ public class BlocksConstruction extends MovingEntity {
             for (BlockSubGrid subgrid : subgrids) {
                 subgrid.draw(gl, this, renderTime);
             }
+            gl.translate(getCenterOfMass());
+            Toolbox.draw3DPointer(gl);
         }
         gl.popMatrix();
 
@@ -67,12 +111,15 @@ public class BlocksConstruction extends MovingEntity {
     }
 
     @Override
-    public BoundingBox getHitbox() {
+    public BoundingBox getHitbox(float time) {
         BoundingBox box = new BoundingBox();
+        Quaternionf orientation = getStateAt(time).orientation();
 
         for (BlockSubGrid subgrid : subgrids) {
-            box.union(subgrid.getHitBox());
+            box.unionRotated(subgrid.getHitBox(), orientation);
         }
+
+        box.move(getStateAt(time).position());
 
         return box;
     }
@@ -82,7 +129,7 @@ public class BlocksConstruction extends MovingEntity {
         Collision intersection = Collision.NONE;
 
         for (BlockSubGrid subgrid : subgrids) {
-            Quaternionf rotationInv = subgrid.getWorldRotation().invert();
+            Quaternionf rotationInv = subgrid.getStructureRotation().invert();
             Vector3fc localOrg = new Vector3f(origin).rotate(rotationInv);
             Vector3fc localDir = new Vector3f(direction).rotate(rotationInv);
 
@@ -103,21 +150,21 @@ public class BlocksConstruction extends MovingEntity {
     }
 
     @Override
-    public List<Vector3f> getShapePoints(List<Vector3f> dest) {
+    public List<Vector3f> getShapePoints(List<Vector3f> dest, float gameTime) {
         ShadowMatrix sm = new ShadowMatrix();
         int i = 0;
 
         for (BlockSubGrid grid : subgrids) {
             sm.pushMatrix();
-            sm.translate(grid.getWorldPosition());
-            sm.rotate(grid.getWorldRotation());
+            sm.translate(grid.getStructurePosition());
+            sm.rotate(grid.getStructureRotation());
 
             for (AbstractPiece piece : grid) {
                 // collect points and ensure dest capacity
                 List<Vector3fc> points = piece.getShape().getPoints();
                 int startInd = i;
                 i += points.size();
-                while (dest.size() < i){
+                while (dest.size() < i) {
                     dest.add(new Vector3f());
                 }
 
@@ -164,6 +211,7 @@ public class BlocksConstruction extends MovingEntity {
 
         out.writeInt(sorted.length);
         for (PieceType type : sorted) {
+//            String identifier = type.manufacturer + "." + type.name;
             out.writeUTF(type.name);
         }
 
@@ -178,7 +226,7 @@ public class BlocksConstruction extends MovingEntity {
         PieceType[] typeMap = new PieceType[nrOfTypes];
         for (int i = 0; i < nrOfTypes; i++) {
             String pieceName = in.readUTF();
-            // TODO maybe add manufacturer or include list of PieceTypeCollections
+            // TODO more robust piece matching
             typeMap[i] = PieceTypeCollection.cheatCache.get(pieceName);
         }
 
@@ -220,17 +268,6 @@ public class BlocksConstruction extends MovingEntity {
                     BlockSubGrid newGrid = new BlockSubGrid();
                     newGrid.setParent(target, jointBlock, true);
                     subgrids.add(newGrid);
-                }
-
-            } else if (block instanceof WheelBasePiece) {
-                WheelBasePiece wheelBaseBlock = (WheelBasePiece) block;
-                List<WheelPiece> wheels = wheelBaseBlock.getWheels();
-                Logger.DEBUG.printf("Adding %s wheels", wheels.size());
-
-                PieceTypeWheel wheel = (PieceTypeWheel) PieceTypeCollection.cheatCache.get("Wheel small");
-
-                for (int i = 0; i < wheels.size(); i++) {
-                    wheels.add(i, wheel.getInstance(Color4f.WHITE));
                 }
             }
         }

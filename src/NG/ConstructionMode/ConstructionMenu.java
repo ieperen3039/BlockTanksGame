@@ -155,8 +155,8 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
                             gl.pushMatrix();
                             {
                                 BlockSubGrid g = modificator.getGrid();
-                                gl.translate(g.getWorldPosition());
-                                gl.rotate(g.getWorldRotation());
+                                gl.translate(g.getStructurePosition());
+                                gl.rotate(g.getStructureRotation());
                                 currentBlock.draw(gl, this, renderTime);
                             }
                             gl.popMatrix();

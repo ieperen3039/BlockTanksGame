@@ -2,7 +2,6 @@ package NG.Blocks.Types;
 
 import NG.Blocks.BlockSubGrid;
 import NG.CollisionDetection.Collision;
-import NG.Core.Game;
 import NG.DataStructures.Generic.AABBi;
 import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
@@ -35,7 +34,7 @@ public abstract class AbstractPiece {
     /* size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final float BLOCK_BASE = 0.8f;
     public static final float BLOCK_HEIGHT = 0.32f;
-    public static final Vector3f BLOCK_SIZE = new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT);
+    public static final Vector3fc BLOCK_SIZE = new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT);
 
     private static final MeshFile STUD = MeshFile.loadFileRequired(Directory.meshes.getPath("stud.ply"));
     protected final Vector3i position;
@@ -116,16 +115,16 @@ public abstract class AbstractPiece {
 
     /**
      * @param grid the subgrid where this piece is placed in
-     * @return real-world position as if it were placed in the given subgrid
+     * @return construction-space position if it were placed in the given subgrid
      */
-    public Vector3f getWorldPosition(BlockSubGrid grid) {
+    public Vector3f getStructurePosition(BlockSubGrid grid) {
         Vector3f localOffset = new Vector3f(
                 position.x * BLOCK_BASE,
                 position.y * BLOCK_BASE,
                 position.z * BLOCK_HEIGHT
         );
-        Vector3f gPos = grid.getWorldPosition();
-        return localOffset.rotate(grid.getWorldRotation()).add(gPos);
+        Vector3f gPos = grid.getStructurePosition();
+        return localOffset.rotate(grid.getStructureRotation()).add(gPos);
     }
 
     /**
@@ -185,16 +184,6 @@ public abstract class AbstractPiece {
     }
 
     /**
-     * computes the force that this piece exerts, assuming -z is down. Default is the gravity.
-     * @param environment the environment of this block
-     * @param entity the entity where this block is part of
-     * @param worldPosition the position of this piece, as returned by {@link #getWorldPosition(BlockSubGrid)}
-     */
-    public Vector3f getForce(Game environment, Entity entity, Vector3f worldPosition){
-        return new Vector3f(0, 0, 9.81f * getType().mass);
-    }
-
-    /**
      * checks whether this block can connect to the given other block using connection points. Does not check whether
      * these blocks intersect, which can be checked with {@link #intersects(AbstractPiece)}
      * @param other another piece
@@ -251,7 +240,7 @@ public abstract class AbstractPiece {
         return getType().hitbox;
     }
 
-    private static void rotateQuarters(Vector3i vector, byte quarters) {
+    public static void rotateQuarters(Vector3i vector, byte quarters) {
         for (byte i = 0; i < quarters; i++) {
             //noinspection SuspiciousNameCombination
             vector.set(-vector.y, vector.x, vector.z);
@@ -290,5 +279,10 @@ public abstract class AbstractPiece {
                 in.readByte(),
                 Storable.readColor(in)
         );
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName();
     }
 }

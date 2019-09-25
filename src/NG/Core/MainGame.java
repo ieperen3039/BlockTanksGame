@@ -6,11 +6,13 @@ import NG.Blocks.PieceTypeCollection;
 import NG.Camera.Camera;
 import NG.Camera.Cursor;
 import NG.Camera.PointCenteredCamera;
+import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.GameState;
 import NG.CollisionDetection.PhysicsEngine;
 import NG.ConstructionMode.ConstructionMenu;
 import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
+import NG.Entities.Entity;
 import NG.Entities.EntityList;
 import NG.Entities.FixedState;
 import NG.Entities.MovingEntity;
@@ -33,23 +35,24 @@ import NG.Mods.ModLoader;
 import NG.Particles.GameParticles;
 import NG.Particles.ParticleShader;
 import NG.Rendering.GLFWWindow;
+import NG.Rendering.Lights.FixedPointLight;
 import NG.Rendering.Lights.GameLights;
 import NG.Rendering.Lights.SingleShadowMapLights;
+import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.RenderBundle;
 import NG.Rendering.RenderLoop;
 import NG.Rendering.Shaders.PhongShader;
+import NG.Rendering.Shaders.WaterShader;
 import NG.Settings.KeyBinding;
 import NG.Settings.Settings;
 import NG.Storable;
 import NG.Tools.*;
+import org.joml.AABBf;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Geert van Ieperen created on 2-8-2019.
@@ -97,7 +100,7 @@ public class MainGame implements ModLoader {
             HUDManager hud = new TankHUD();
 //            Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
             Camera camera = new PointCenteredCamera(new Vector3f(20, 20, 20), Vectors.newZero());
-            GameLights lights = new SingleShadowMapLights();
+            GameLights lights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState state = new PhysicsEngine();
             GameMap map = new EmptyMap();
             GameParticles particles = new GameParticles();
@@ -111,17 +114,28 @@ public class MainGame implements ModLoader {
                     .add(gl -> game.get(GameLights.class).draw(gl))
                     .add(gl -> game.get(GameMap.class).draw(gl))
                     .add(gl -> game.get(GameState.class).drawEntities(gl))
+                    .add(gl -> {
+                        if (game.get(Settings.class).RENDER_HITBOXES)
+                            drawEntityHitboxes(game, gl);
+                    })
             );
 
             // particles
             game.add(new RenderBundle(new ParticleShader())
-                    .add(gl -> game.get(GameParticles.class).draw(gl)));
+                    .add(gl -> game.get(GameParticles.class).draw(gl))
+            );
+
+            // water
+            game.add(new RenderBundle(new WaterShader())
+                    .add(gl -> game.get(GameLights.class).draw(gl))
+                    .add(gl -> WaterShader.drawOcean(gl, Vectors.O))
+            );
 
             BasicBlocks.generateDefaults();
             PieceTypeCollection fileBlocks = new FilePieceTypeCollection("Base");
             HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), new BasicBlocks(), fileBlocks);
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
-            GameLights constLights = new SingleShadowMapLights();
+            GameLights constLights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState constState = new EntityList();
 
             construction = new GameService(GAME_VERSION, mainThreadName, renderer, window, inputHandler,
@@ -142,6 +156,17 @@ public class MainGame implements ModLoader {
         }
     }
 
+    private static void drawEntityHitboxes(Game game, SGL gl) {
+        float rendertime = game.get(GameTimer.class).getRendertime();
+        Collection<Entity> entities = game.get(GameState.class).entities();
+        Collection<AABBf> hitboxes = new ArrayList<>(entities.size());
+        for (Entity e : entities) {
+            BoundingBox box = e.getHitbox(rendertime);
+            hitboxes.add(box);
+        }
+        Toolbox.drawHitboxes(gl, hitboxes);
+    }
+
     public void root() throws Exception {
         init();
         run();
@@ -150,6 +175,7 @@ public class MainGame implements ModLoader {
 
     private void init() throws Exception {
         Logger.DEBUG.print("Initializing...");
+        Logger.printOnline(gameService::toString);
         renderer.init(gameService);
         inputHandler.init(gameService);
         menu.init();
@@ -182,12 +208,12 @@ public class MainGame implements ModLoader {
         });
 
         construction.get(GameLights.class).
-                addDirectionalLight(new Vector3f(-1, -1, 2), Color4f.WHITE, 0.5f);
+                addDirectionalLight(new Vector3f(-1, -2, 3), Color4f.WHITE, 0.5f);
         construction.get(GameLights.class).
-                addDirectionalLight(new Vector3f(1, 1, 0.5f), Color4f.WHITE, 0.1f);
+                addPointLight(new FixedPointLight(new Vector3f(10, 20, 5f), Color4f.WHITE, 4f));
 
         game.get(GameLights.class).
-                addDirectionalLight(new Vector3f(2, 1.5f, 0.5f), Color4f.WHITE, 0.5f);
+                addDirectionalLight(new Vector3f(0, 0, 1), Color4f.WHITE, 0.5f);
 
         Logger.DEBUG.print("Loading mods...");
 
@@ -268,29 +294,44 @@ public class MainGame implements ModLoader {
     private void openGame() {
         gameService.select(game);
 
+        AbstractGameLoop gameLoop = new AbstractGameLoop("gameState", 30) {
+            @Override
+            protected void update(float realDelta) {
+                GameTimer timer = game.get(GameTimer.class);
+                timer.updateGameTime();
+                float gametime = timer.getGametime();
+                float deltaTime = timer.getGametimeDifference();
+                game.getAll(GameState.class).forEach(state -> state.update(gametime, deltaTime));
+            }
+
+            @Override
+            public void cleanup() {
+                game.getAll(GameState.class).forEach(GameAspect::cleanup);
+            }
+        };
+
+        game.add(gameLoop);
+        gameLoop.start();
+
         new Thread(() -> {
             try {
-                MeshMap map = new MeshMap(Directory.maps.getPath("map.obj"), game.get(Settings.class).DEBUG);
+                MeshMap map = new MeshMap(Directory.maps.getPath("map2.ply"), game.get(Settings.class).DEBUG);
                 map.init(game);
                 GameMap original = game.get(GameMap.class);
                 game.add(map);
                 game.remove(original);
                 original.cleanup();
 
-                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("chart.conbi"), MovingEntity.class);
-                Vector3fc ePos = map.getGridScanner()
-                        .getIntersection(new Vector3f(0, 0, 100), Vectors.NZ, true)
-                        .getHitPos();
-                assert ePos != null;
-                entity.setState(new FixedState(new Vector3fx(ePos).add(0, 0, 10), new Quaternionf()));
+                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("boat.conbi"), MovingEntity.class);
+                entity.setState(new FixedState(new Vector3fx(0, 0, 0), new Quaternionf()));
 
                 GameState gameState = game.get(GameState.class);
                 gameState.addEntity(entity);
-                gameState.addEntity(new Cursor(entity::getPhysicsState));
-                Logger.printOnline(() -> String.valueOf(entity.getPhysicsState().position()));
+                gameState.addEntity(new Cursor(() -> entity.getStateAt(game.get(GameTimer.class).getRendertime())));
+                Logger.printOnline(() -> String.valueOf(entity.getHitbox(game.get(GameTimer.class).getRendertime())));
 
             } catch (Exception ex) {
-                Logger.ERROR.print("Could not load map", ex);
+                Logger.ERROR.print("Could not open game", ex);
             }
         }, "Load map").start();
     }

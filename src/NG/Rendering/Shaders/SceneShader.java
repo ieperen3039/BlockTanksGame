@@ -2,17 +2,15 @@ package NG.Rendering.Shaders;
 
 import NG.Camera.Camera;
 import NG.Core.Game;
-import NG.DataStructures.Generic.Color4f;
 import NG.Rendering.GLFWWindow;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MatrixStack.SceneShaderGL;
 import NG.Tools.Logger;
 import NG.Tools.Toolbox;
-import org.joml.*;
-import org.lwjgl.system.MemoryStack;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -130,109 +128,13 @@ public abstract class SceneShader implements ShaderProgram, MaterialShader, Ligh
         uniforms.put(uniformName, uniformLocation);
     }
 
-    /**
-     * Set the value of a 4x4 matrix shader uniform.
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, Matrix4f value) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            // Dump the matrix into a float buffer
-            FloatBuffer fb = stack.mallocFloat(16);
-            value.get(fb);
-            glUniformMatrix4fv(unif(uniformName), false, fb);
-        }
-    }
-
-    /**
-     * Set the value of a 3x3 matrix shader uniform.
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, Matrix3f value) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            // Dump the matrix into a float buffer
-            FloatBuffer fb = stack.mallocFloat(9);
-            value.get(fb);
-            glUniformMatrix3fv(unif(uniformName), false, fb);
-        }
-    }
-
-    /**
-     * Set the value of a certain integer shader uniform
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, int value) {
-        glUniform1i(unif(uniformName), value);
-    }
-
-    /**
-     * Set the value of a certain float shader uniform
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, float value) {
-        glUniform1f(unif(uniformName), value);
-    }
-
-    /**
-     * Set the value of a certain 3D Vector shader uniform
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    public void setUniform(String uniformName, Vector3fc value) {
-        glUniform3f(unif(uniformName), value.x(), value.y(), value.z());
-    }
-
-    /**
-     * Set the value of a certain 2D Vector shader uniform
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, Vector2fc value) {
-        glUniform2f(unif(uniformName), value.x(), value.y());
-    }
-
-    private int unif(String uniformName) {
+    @Override
+    public int unif(String uniformName) {
         try {
             return uniforms.get(uniformName);
         } catch (NullPointerException ex) {
             throw new ShaderException("Uniform '" + uniformName + "' does not exist");
         }
-    }
-
-    protected void setUniform(String uniformName, float[] value) {
-        glUniform4f(unif(uniformName), value[0], value[1], value[2], value[3]);
-    }
-
-    /**
-     * Set the value of a certain 4D Vector shader uniform
-     * @param uniformName The name of the uniform.
-     * @param value       The new value of the uniform.
-     */
-    protected void setUniform(String uniformName, Vector4fc value) {
-        glUniform4f(unif(uniformName), value.x(), value.y(), value.z(), value.w());
-    }
-
-    protected void setUniform(String uniformName, boolean value) {
-        setUniform(uniformName, value ? 1 : 0);
-    }
-
-    protected void setUniform(String uniformName, Color4f color) {
-        glUniform4f(unif(uniformName), color.red, color.green, color.blue, color.alpha);
-    }
-
-    public void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
-        setUniform("viewProjectionMatrix", viewProjectionMatrix);
-    }
-
-    public void setModelMatrix(Matrix4f modelMatrix) {
-        setUniform("modelMatrix", modelMatrix);
-    }
-
-    public void setNormalMatrix(Matrix3f normalMatrix) {
-        setUniform("normalMatrix", normalMatrix);
     }
 
     /**
@@ -266,5 +168,20 @@ public abstract class SceneShader implements ShaderProgram, MaterialShader, Ligh
         int windowWidth = window.getWidth();
         int windowHeight = window.getHeight();
         return new SceneShaderGL(this, windowWidth, windowHeight, camera);
+    }
+
+    @Override
+    public void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
+        setUniform("viewProjectionMatrix", viewProjectionMatrix);
+    }
+
+    @Override
+    public void setModelMatrix(Matrix4f modelMatrix) {
+        setUniform("modelMatrix", modelMatrix);
+    }
+
+    @Override
+    public void setNormalMatrix(Matrix3f normalMatrix) {
+        setUniform("normalMatrix", normalMatrix);
     }
 }

@@ -12,6 +12,7 @@ import NG.Rendering.Shaders.ShaderProgram;
 import NG.Settings.Settings;
 import NG.Tools.Directory;
 import NG.Tools.Logger;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.lwjgl.system.MemoryStack;
@@ -69,6 +70,11 @@ public class ParticleShader implements ShaderProgram {
         glUniform1f(sizeUniform, settings.PARTICLE_SIZE);
     }
 
+    @Override
+    public int unif(String uniformName) {
+        throw new UnsupportedOperationException();
+    }
+
     public void bind() {
         glUseProgram(programId);
     }
@@ -120,6 +126,21 @@ public class ParticleShader implements ShaderProgram {
         int windowHeight = window.getHeight();
 
         return new ParticleGL(camera, windowWidth, windowHeight, settings.ISOMETRIC_VIEW);
+    }
+
+    @Override
+    public void setProjectionMatrix(Matrix4f viewProjectionMatrix) {
+        setUniform("viewProjectionMatrix", viewProjectionMatrix);
+    }
+
+    @Override
+    public void setModelMatrix(Matrix4f modelMatrix) {
+        setUniform("modelMatrix", modelMatrix);
+    }
+
+    @Override
+    public void setNormalMatrix(Matrix3f normalMatrix) {
+        setUniform("normalMatrix", normalMatrix);
     }
 
     public class ParticleGL extends AbstractSGL {

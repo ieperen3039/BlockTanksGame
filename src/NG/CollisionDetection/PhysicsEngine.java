@@ -11,7 +11,7 @@ import java.util.Collection;
 /**
  * @author Geert van Ieperen created on 10-2-2019.
  */
-public class PhysicsEngine extends AbstractState {
+public class PhysicsEngine extends AbstractGameState {
     private final CollisionDetection entities;
 
     public PhysicsEngine() {
@@ -19,15 +19,15 @@ public class PhysicsEngine extends AbstractState {
     }
 
     @Override
-    public void update(float gameTime) {
-        entities.forEach(entity -> entity.preUpdate(gameTime));
+    public void update(float gameTime, float deltaTime) {
+        entities.forEach(entity -> entity.preUpdate(gameTime, deltaTime));
         entities.processCollisions(gameTime);
         entities.forEach(Entity::postUpdate);
     }
 
     @Override
-    public Pair<Entity, Float> getEntityByRay(Vector3fc origin, Vector3fc dir) {
-        return entities.rayTrace(origin, dir);
+    public Pair<Entity, Float> getEntityByRay(Vector3fc origin, Vector3fc dir, float gameTime) {
+        return entities.rayTrace(origin, dir, gameTime);
     }
 
     @Override

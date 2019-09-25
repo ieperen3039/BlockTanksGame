@@ -21,7 +21,7 @@ public abstract class StaticEntity implements Entity {
     }
 
     @Override
-    public void preUpdate(float gameTime) {
+    public void preUpdate(float gameTime, float deltaTime) {
         state.update(gameTime);
     }
 
@@ -30,11 +30,6 @@ public abstract class StaticEntity implements Entity {
         FixedState fixedState = new FixedState(state);
         fixedState.update(gameTime);
         return fixedState;
-    }
-
-    @Override
-    public State getPhysicsState() {
-        return state;
     }
 
     @Override

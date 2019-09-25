@@ -24,8 +24,8 @@ public class Settings {
 
     // video settings
     public static final float FOV = (float) Math.toRadians(30);
-    public static final float Z_NEAR = 0.01f;
-    public static final float Z_FAR = 1000;
+    public static final float Z_NEAR = 0.1f;
+    public static final float Z_FAR = 5000;
     public int TARGET_FPS = 30;
     public boolean V_SYNC = false;
     public int DEFAULT_WINDOW_WIDTH = 1600;

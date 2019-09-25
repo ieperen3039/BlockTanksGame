@@ -19,6 +19,7 @@ public enum Directory {
     soundEffects(true, "res", "sounds"),
     music(true, "res", "music"),
     maps(true, "res", "maps"),
+    shaderTextures(true, "res", "utility"),
 
     mods(false, "Mods"),
     blocks(true, "res", "blocks"),
