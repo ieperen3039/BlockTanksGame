@@ -359,16 +359,30 @@ public interface Storable {
      */
     static <T> T readSafe(DataInputStream in, Class<T> expected) throws IOException {
         int bits = in.readInt();
-        in.mark(bits);
 
-        try {
-            return read(in, expected);
+        if (in.markSupported()) {
+            in.mark(bits);
 
-        } catch (IOException | ClassNotFoundException e) {
-            in.reset();
-            long skip = in.skip(bits);
-            assert skip == bits;
-            return null;
+            try {
+                return read(in, expected);
+
+            } catch (IOException | ClassNotFoundException e) {
+                in.reset();
+                long skip = in.skip(bits);
+                assert skip == bits : skip + "/" + bits;
+                return null;
+            }
+
+        } else {
+            byte[] buffer = new byte[bits];
+            in.readNBytes(buffer, 0, bits);
+            in = new DataInputStream(new ByteArrayInputStream(buffer));
+
+            try {
+                return read(in, expected);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
         }
     }
 
