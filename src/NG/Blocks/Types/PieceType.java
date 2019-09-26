@@ -18,6 +18,7 @@ public class PieceType {
     public final Shape hitbox;
     public final Vector3ic size;
     public final float mass;
+    public final String category;
 
     protected Mesh mesh;
     protected MeshFile meshFile;
@@ -26,14 +27,15 @@ public class PieceType {
     protected int femaleStart;
 
     public PieceType(
-            String name, MeshFile file, Shape hitbox, Vector3ic size, float mass, List<Vector3ic> connections,
-            int femaleStart
+            String name, MeshFile file, Shape hitbox, Vector3ic size, float mass, String category,
+            List<Vector3ic> connections, int femaleStart
     ) {
         this.name = name;
         this.meshFile = file;
         this.hitbox = hitbox;
         this.size = size;
         this.mass = mass;
+        this.category = category;
         this.connections = connections;
         this.femaleStart = femaleStart;
     }

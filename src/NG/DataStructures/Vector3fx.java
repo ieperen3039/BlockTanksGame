@@ -247,7 +247,7 @@ public class Vector3fx implements Vector3fxc {
      * @param other another vector
      * @return this
      */
-    public Vector3fx add(Vector3fx other) {
+    public Vector3fx add(Vector3fxc other) {
         return add(other, this);
     }
 
@@ -376,10 +376,15 @@ public class Vector3fx implements Vector3fxc {
      * @return this
      */
     public Vector3fx mul(float x, float y, float z) {
-        this.x = mulX(x);
-        this.y = mulY(y);
-        this.z = mulZ(z);
-        return this;
+        return mul(x, y, z, this);
+    }
+
+    @Override
+    public Vector3fx mul(float x, float y, float z, Vector3fx dest) {
+        dest.x = mulX(x);
+        dest.y = mulY(y);
+        dest.z = mulZ(z);
+        return dest;
     }
 
     /**
@@ -397,6 +402,15 @@ public class Vector3fx implements Vector3fxc {
         dest.y = mulY(other.y());
         dest.z = mulZ(other.z());
         return dest;
+    }
+
+    public Vector3fx mul(float scalar){
+        return mul(scalar, scalar, scalar, this);
+    }
+
+    @Override
+    public Vector3fx mul(float scalar, Vector3fx dest) {
+        return mul(scalar, scalar, scalar, dest);
     }
 
     /**
@@ -441,6 +455,18 @@ public class Vector3fx implements Vector3fxc {
         dest.x = divX(other.x());
         dest.y = divY(other.y());
         dest.z = divZ(other.z());
+        return dest;
+    }
+
+    public Vector3fx div(float scalar){
+        return div(scalar, this);
+    }
+
+    @Override
+    public Vector3fx div(float scalar, Vector3fx dest) {
+        dest.x = divX(scalar);
+        dest.y = divY(scalar);
+        dest.z = divZ(scalar);
         return dest;
     }
 

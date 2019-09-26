@@ -55,17 +55,10 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
 
         this.bounds.union(hitBox);
 
-        // get middle of the block
-        Vector3f extend = new Vector3f(type.size).div(2);
-        Vector3f blockCOM = new Vector3f(block.getPosition())
-                .sub(0.5f, 0.5f, 0.5f)
-                .add(extend)
+        Vector3f blockCOM = new Vector3f(hitBox.getMinimum())
+                .lerp(new Vector3f(hitBox.getMaximum()), 0.5f)
                 .mul(BLOCK_SIZE);
 
-        for (byte i = 0; i < block.getRotationByte(); i++) {
-            //noinspection SuspiciousNameCombination
-            blockCOM.set(-blockCOM.y, blockCOM.x, blockCOM.z);
-        }
 
         // weighted average of center of mass
         centerOfMass.mul(totalMass)
@@ -247,23 +240,31 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     }
 
     /**
-     * @return contruction-space hitbox
+     * @return structure-space hitbox
      */
-    public AABBf getHitBox() {
+    public BoundingBox getLocalHitBox() {
         BoundingBox result = new BoundingBox();
         Quaternionf rotation = getStructureRotation();
 
-        Vector3f point = new Vector3f();
-        result.union(point.set(bounds.xMin - 1, bounds.yMin - 1, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMin - 1, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMin - 1, bounds.yMax, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMin - 1, bounds.yMin - 1, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMin - 1).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMin - 1, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMin - 1, bounds.yMax, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
-        result.union(point.set(bounds.xMax, bounds.yMax, bounds.zMax).mul(BLOCK_SIZE).rotate(rotation));
+        Vector3f buffer = new Vector3f();
+        addBound(result, rotation, buffer, bounds.xMin - 0.5f, bounds.yMin - 0.5f, bounds.zMin);
+        addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMin - 0.5f, bounds.zMin);
+        addBound(result, rotation, buffer, bounds.xMin - 0.5f, bounds.yMax + 0.5f, bounds.zMin);
+        addBound(result, rotation, buffer, bounds.xMin - 0.5f, bounds.yMin - 0.5f, bounds.zMax + 1f);
+        addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMax + 0.5f, bounds.zMin);
+        addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMin - 0.5f, bounds.zMax + 1f);
+        addBound(result, rotation, buffer, bounds.xMin - 0.5f, bounds.yMax + 0.5f, bounds.zMax + 1f);
+        addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMax + 0.5f, bounds.zMax + 1f);
 
         return result;
+    }
+
+    private static void addBound(BoundingBox dest, Quaternionf rotation, Vector3f buffer, float x, float y, float z) {
+        Vector3f point3D = buffer.set(x, y, z)
+                .mul(BLOCK_SIZE)
+                .rotate(rotation);
+
+        dest.union(point3D);
     }
 
     public GridRayScanner getRayScanner() {

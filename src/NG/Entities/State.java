@@ -35,6 +35,12 @@ public interface State extends Storable {
     float time();
 
     /**
+     * sets the time value of this state to a new value. Does not trigger an update to this state
+     * @param newTime the new time value
+     */
+    void setTime(float newTime);
+
+    /**
      * Extrapolates this state for the given gameTime and updates this state accordingly. Modifies this state
      * @param gameTime the time of the updated state
      */

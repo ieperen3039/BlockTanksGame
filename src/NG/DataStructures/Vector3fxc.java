@@ -71,7 +71,7 @@ public interface Vector3fxc {
     Vector3fx sub(Vector3fc other, Vector3fx dest);
 
     /**
-     * Multiply the other vector to this vector and store the result in dest
+     * Multiply this with the other vector and store the result in dest
      * @param other another vector
      * @param dest  will hold the result
      * @return dest
@@ -85,6 +85,20 @@ public interface Vector3fxc {
      * @return dest
      */
     Vector3fx mul(Vector3fc other, Vector3fx dest);
+
+    /**
+     * Multiply this with the given components and store the result in dest
+     * @param dest will hold the result
+     * @return dest
+     */
+    Vector3fx mul(float x, float y, float z, Vector3fx dest);
+
+    /**
+     * Multiply each component of this with the given scalar and store the result in dest
+     * @param dest will hold the result
+     * @return dest
+     */
+    Vector3fx mul(float scalar, Vector3fx dest);
 
     /**
      * Divides each element of this vector with its element of the other vector, and store the result in dest
@@ -104,10 +118,18 @@ public interface Vector3fxc {
     Vector3fx div(Vector3fc other, Vector3fx dest);
 
     /**
+     * Divides each element of this vector by the given scalar, and store the result in dest
+     * @param scalar a scalar value
+     * @param dest   will hold the result
+     * @return dest
+     */
+    Vector3fx div(float scalar, Vector3fx dest);
+
+    /**
      * linearly interpolates this vector with other
-     * @param other an other fixed-point vector
+     * @param other    an other fixed-point vector
      * @param fraction the fraction of interpolation from this vector to the other vector.
-     * @param dest will hold the result
+     * @param dest     will hold the result
      * @return dest
      */
     Vector3fx lerp(Vector3fxc other, float fraction, Vector3fx dest);

@@ -22,6 +22,7 @@ import NG.Settings.KeyBinding;
 import NG.Storable;
 import NG.Tools.Directory;
 import NG.Tools.Logger;
+import NG.Tools.Vectors;
 import org.joml.Quaternionf;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
@@ -84,7 +85,8 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
         SButton selectNextSubgrid = new SButton("<", () -> {
             modificator.next();
             Camera cam = game.get(Camera.class); // TODO camera rotation upon switching subgrid
-//            cam.set(cam.getFocus(), constructor.getGrid().getWorldRotation());
+            Quaternionf structureRotation = modificator.getGrid().getStructureRotation();
+            cam.set(cam.getFocus(), Vectors.newZ().rotate(structureRotation));
         });
         SButton selectPrevSubgrid = new SButton(">", () -> modificator.previous());
 

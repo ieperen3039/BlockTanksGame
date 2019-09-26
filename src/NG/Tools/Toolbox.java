@@ -126,7 +126,8 @@ public final class Toolbox {
         for (AABBf h : targets) {
             gl.pushMatrix();
             {
-                gl.scale(h.maxX - h.minX / 2, h.maxY - h.minY / 2, h.maxZ - h.minZ / 2);
+                gl.translate((h.maxX + h.minX) / 2, (h.maxY + h.minY) / 2, (h.maxZ + h.minZ) / 2);
+                gl.scale((h.maxX - h.minX) / 2, (h.maxY - h.minY) / 2, (h.maxZ - h.minZ) / 2);
                 gl.render(GenericShapes.CUBE, null);
             }
             gl.popMatrix();

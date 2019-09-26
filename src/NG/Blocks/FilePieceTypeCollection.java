@@ -102,7 +102,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             }
             PieceType pieceType;
 
-            pieceType = new PieceType(name, mesh, shape, size, mass, connections, femaleStart);
+            pieceType = new PieceType(name, mesh, shape, size, mass, manufacturer, connections, femaleStart);
 
             JsonNode hiddenNode = block.findValue("hidden");
             if (hiddenNode == null || !hiddenNode.asBoolean()) {
@@ -160,10 +160,10 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode hOffNode = joint.findValue("headOffset");
             Vector3fc headOffset = readVector3f(hOffNode).mul(SCALE, SCALE, SCALE);
 
-            blocks.put(name, new PieceTypeJoint(name, bottomPiece, topPiece, axis, jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle));
+            blocks.put(name, new PieceTypeJoint(name, bottomPiece, topPiece, axis, jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle, manufacturer));
         }
 
-        cheatCache.putAll(blocks); // TODO remove
+        PieceTypeCollection.allCollections.put(getCategory(), this);
     }
 
     public FilePieceTypeCollection(String mapName) throws IOException {

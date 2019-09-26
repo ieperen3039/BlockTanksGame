@@ -5,6 +5,7 @@ import NG.DataStructures.Vector3fxc;
 import NG.Storable;
 import NG.Tools.Toolbox;
 import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -31,11 +32,11 @@ public class MutableState implements State {
     }
 
     public MutableState(
-            float time, Vector3fxc position, Vector3fc velocity, Quaternionf orientation, Quaternionf rotationSpeed
+            float time, Vector3fxc position, Vector3fc velocity, Quaternionfc orientation, Quaternionf rotationSpeed
     ) {
         this.time = time;
         this.position = new Vector3fx(position);
-        this.orientation = new Quaternionf(orientation);
+        this.orientation = new Quaternionf().set(orientation);
         this.velocity = new Vector3f(velocity);
         this.rotationSpeed = rotationSpeed;
     }
@@ -82,26 +83,30 @@ public class MutableState implements State {
     }
 
     @Override
+    public void setTime(float newTime) {
+        time = newTime;
+    }
+
+    @Override
     public void update(float gameTime) {
         updateAround(gameTime, position);
     }
 
-    public void updateAround(float gameTime, Vector3fxc center){
+    public void updateAround(float gameTime, Vector3fxc pivot){
         float deltaTime = gameTime - time;
-        Vector3fx vecToCenter = new Vector3fx(center).sub(position);
 
         velocity.add(netForce.mul(deltaTime));
         Vector3f movement = new Vector3f(velocity).mul(deltaTime);
         position.add(movement);
 
         netTorque.mul(deltaTime);
-        rotationSpeed.rotateXYZ(netTorque.x(), netTorque.y(), netTorque.z());
-        Quaternionf rotation = new Quaternionf().nlerp(rotationSpeed, deltaTime).normalize();
-        Vector3fx newVecToCenter = new Vector3fx(vecToCenter).rotate(rotation);
-        Vector3fx centerMove = newVecToCenter.sub(vecToCenter);
+        Quaternionf rotAcc = new Quaternionf().rotateXYZ(netTorque.x(), netTorque.y(), netTorque.z());
+        rotationSpeed.mul(rotAcc);
 
+        Quaternionf rotation = new Quaternionf().nlerpIterative(rotationSpeed, deltaTime, 0.1f).normalize();
         orientation.mul(rotation);
-        position.add(centerMove);
+
+        position.sub(pivot).rotate(rotation).add(pivot);
 
         time = gameTime;
         netForce.zero();

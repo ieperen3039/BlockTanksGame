@@ -420,7 +420,6 @@ public class CollisionDetection {
         }
 
         public void update(float gameTime) {
-            entity.preUpdate(gameTime, gameTime - lastUpdateTime);
             if (lastUpdateTime == -1){
                 prevPoints = entity.getShapePoints(gameTime);
                 nextPoints = entity.getShapePoints(gameTime);

@@ -25,11 +25,13 @@ public class StateInterpolator extends LinearInterpolator<State> {
 
     @Override
     protected State derivative(State firstElt, State secondElt, float timeDifference) {
+        Quaternionf firstEltOrientation = new Quaternionf().set(firstElt.orientation());
+
         return new MutableState(
                 secondElt.time() - firstElt.time(),
                 new Vector3fx(secondElt.position()).sub(firstElt.position()),
                 new Vector3f(secondElt.velocity()).sub(firstElt.velocity()),
-                secondElt.orientation().difference(firstElt.orientation(), new Quaternionf())
+                secondElt.orientation().difference(firstEltOrientation, firstEltOrientation)
         );
     }
 }

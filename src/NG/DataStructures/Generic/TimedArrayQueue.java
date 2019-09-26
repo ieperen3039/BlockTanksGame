@@ -71,9 +71,8 @@ public class TimedArrayQueue<T> extends AbstractQueue<Pair<T, Float>> {
 
     @Override
     public Pair<T, Float> poll() {
-        if (isEmpty()) return null;
-
         synchronized (this) {
+            if (isEmpty()) return null;
             return new Pair<>(elements.poll(), timeStamps.poll());
         }
     }
@@ -81,6 +80,7 @@ public class TimedArrayQueue<T> extends AbstractQueue<Pair<T, Float>> {
     @Override
     public Pair<T, Float> peek() {
         synchronized (this) {
+            if (isEmpty()) return null;
             return new Pair<>(elements.peek(), timeStamps.peek());
         }
     }
@@ -127,7 +127,7 @@ public class TimedArrayQueue<T> extends AbstractQueue<Pair<T, Float>> {
      */
     public void insert(T element, float startTime) {
         synchronized (this) {
-            if (startTime > timeStamps.peekLast()) {
+            if (timeStamps.isEmpty() || startTime > timeStamps.peekLast()) {
                 add(element, startTime);
                 return;
             }

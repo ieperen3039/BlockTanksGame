@@ -36,13 +36,17 @@ public abstract class LinearInterpolator<T> extends TimedArrayQueue<T> {
      * {@link #interpolate(Object, Object, float) interpolate(elt, elt, 0)}
      */
     public T getInterpolated(float timeStamp) {
-        assert !isEmpty();
-        if (size() == 1) {
-            Pair<T, Float> elt = getFirst();
-            return interpolate(elt.left, elt.left, 0);
-        }
+        ActiveNext elts;
 
-        ActiveNext elts = getActiveAndNext(timeStamp);
+        synchronized (this) {
+            assert !isEmpty();
+            if (size() == 1) {
+                Pair<T, Float> elt = getFirst();
+                return interpolate(elt.left, elt.left, 0);
+            }
+
+            elts = getActiveAndNext(timeStamp);
+        }
 
         float fraction = (timeStamp - elts.firstTime) / (elts.secondTime - elts.firstTime);
         if (Float.isNaN(fraction)) return elts.firstElement;
@@ -51,21 +55,36 @@ public abstract class LinearInterpolator<T> extends TimedArrayQueue<T> {
     }
 
     public T getDerivative(float timeStamp) {
-        assert !isEmpty();
-        if (size() == 1) {
-            Pair<T, Float> elt = getFirst();
-            return derivative(elt.left, elt.left, 0);
-        }
+        ActiveNext elts;
 
-        ActiveNext elts = getActiveAndNext(timeStamp);
+        synchronized (this) {
+            assert !isEmpty();
+            if (size() == 1) {
+                Pair<T, Float> elt = getFirst();
+                return derivative(elt.left, elt.left, 0);
+            }
+
+            elts = getActiveAndNext(timeStamp);
+        }
 
         return derivative(elts.firstElement, elts.secondElement, elts.secondTime - elts.firstTime);
     }
 
     @Override
     public Pair<T, Float> poll() {
-        if (size() == 1) return null;
-        return super.poll();
+        synchronized (this) {
+            if (size() == 1) return null;
+            return super.poll();
+        }
+    }
+
+    @Override
+    public void removeUntil(float time) {
+        synchronized (this) {
+            while (size() > 1 && peek().right < time){
+                remove();
+            }
+        }
     }
 
     /**

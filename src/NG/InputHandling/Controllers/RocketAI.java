@@ -6,7 +6,7 @@ import NG.Entities.Entity;
 import NG.Entities.MovingEntity;
 import NG.Entities.State;
 import NG.Tools.Vectors;
-import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -88,7 +88,7 @@ public class RocketAI implements AircraftControls {
                 .toVector3f(vecToTarget)
                 .normalize();
 
-        Quaternionf projOrientation = projState.orientation();
+        Quaternionfc projOrientation = projState.orientation();
         xVec = Vectors.newX().rotate(projOrientation);
         yVec = Vectors.newY().rotate(projOrientation);
         zVec = Vectors.newZ().rotate(projOrientation);

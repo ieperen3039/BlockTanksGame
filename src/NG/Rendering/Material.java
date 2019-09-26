@@ -12,7 +12,7 @@ public enum Material {
     PLASTIC(new Color4f(0.2f, 0.2f, 0.2f), Color4f.WHITE, 5),
 
     SILVER(new Color4f(0.8f, 0.8f, 0.8f), new Color4f(0.9f, 0.9f, 1f), 40),
-    WATER(new Color4f(0.5f, 0.5f, 1f, 0.95f), Color4f.WHITE, 20);
+    WATER(new Color4f(0.3f, 0.3f, 1f, 0.95f), Color4f.WHITE, 5);
 
     public final Color4f baseColor;
     public final Color4f specular;

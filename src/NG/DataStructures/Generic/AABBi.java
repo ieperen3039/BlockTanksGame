@@ -58,13 +58,13 @@ public class AABBi {
         zMax = Math.max(point.z(), zMax);
     }
 
-    public void union(AABBi point) {
-        xMin = Math.min(point.xMin, xMin);
-        yMin = Math.min(point.xMin, yMin);
-        zMin = Math.min(point.xMin, zMin);
-        xMax = Math.max(point.xMax, xMax);
-        yMax = Math.max(point.xMax, yMax);
-        zMax = Math.max(point.xMax, zMax);
+    public void union(AABBi box) {
+        xMin = Math.min(box.xMin, this.xMin);
+        yMin = Math.min(box.yMin, this.yMin);
+        zMin = Math.min(box.zMin, this.zMin);
+        xMax = Math.max(box.xMax, this.xMax);
+        yMax = Math.max(box.yMax, this.yMax);
+        zMax = Math.max(box.zMax, this.zMax);
     }
 
     public boolean intersects(AABBi other) {

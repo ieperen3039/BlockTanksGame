@@ -20,19 +20,23 @@ public class BasicBlocks implements PieceTypeCollection {
     private static final Map<Vector3ic, PieceType> cache = new HashMap<>();
     private static final Pattern namingScheme = Pattern.compile("block (\\d+)x(\\d+)x(\\d+)");
     public static final float BLOCK_BASE_H = BLOCK_BASE / 2;
+    private static final String CATEGORY = "Floating Bricks";
 
-    public static void generateDefaults() {
+    public BasicBlocks() {
         for (int l = 1; l <= 4; l *= 2) {
             for (int h = l; h <= 8; h *= 2) {
-                get(l, h, 1);
-                get(l, h, 3);
+                get(h, l, 1);
+                get(h, l, 3);
             }
         }
+
         get(1, 3, 1);
         get(1, 3, 3);
         get(2, 3, 1);
         get(2, 3, 3);
         get(2, 5, 1);
+
+        PieceTypeCollection.allCollections.put(getCategory(), this);
     }
 
     public static PieceType get(Vector3ic size) {
@@ -81,11 +85,10 @@ public class BasicBlocks implements PieceTypeCollection {
         PieceType newBlock = new PieceType(
                 String.format("block %dx%dx%d", xSize, ySize, zSize),
                 block.toMeshFile(), block.toShape(), size,
-                xSize * ySize * zSize, Arrays.asList(connections), nrOfStuds
+                xSize * ySize * zSize, CATEGORY, Arrays.asList(connections), nrOfStuds
         );
 
         cache.put(size, newBlock);
-        cheatCache.put(newBlock.name, newBlock); // TODO remove
 
         return newBlock;
     }
@@ -110,13 +113,13 @@ public class BasicBlocks implements PieceTypeCollection {
         return new PieceType(
                 String.format("plate %dx%d", xSize, ySize),
                 block.toMeshFile(), block.toShape(), new Vector3i(xSize, ySize, 0),
-                xSize * ySize * 0.01f, Arrays.asList(connections), nrOfStuds
+                xSize * ySize * 0.01f, CATEGORY, Arrays.asList(connections), nrOfStuds
         );
     }
 
     @Override
     public String getCategory() {
-        return "Floating Bricks";
+        return CATEGORY;
     }
 
     public PieceType getByName(String name) {

@@ -131,9 +131,9 @@ public class MainGame implements ModLoader {
                     .add(gl -> WaterShader.drawOcean(gl, Vectors.O))
             );
 
-            BasicBlocks.generateDefaults();
             PieceTypeCollection fileBlocks = new FilePieceTypeCollection("Base");
-            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), new BasicBlocks(), fileBlocks);
+            BasicBlocks basicBlocks = new BasicBlocks();
+            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), basicBlocks, fileBlocks);
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
             GameLights constLights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState constState = new EntityList();
@@ -213,7 +213,7 @@ public class MainGame implements ModLoader {
                 addPointLight(new FixedPointLight(new Vector3f(10, 20, 5f), Color4f.WHITE, 4f));
 
         game.get(GameLights.class).
-                addDirectionalLight(new Vector3f(0, 0, 1), Color4f.WHITE, 0.5f);
+                addDirectionalLight(new Vector3f(1, 2, 3), Color4f.WHITE, 0.5f);
 
         Logger.DEBUG.print("Loading mods...");
 
@@ -322,8 +322,9 @@ public class MainGame implements ModLoader {
                 game.remove(original);
                 original.cleanup();
 
-                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("boat.conbi"), MovingEntity.class);
-                entity.setState(new FixedState(new Vector3fx(0, 0, 0), new Quaternionf()));
+                float gameTime = game.get(GameTimer.class).getGametime();
+                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("temp.conbi"), MovingEntity.class);
+                entity.setState(new FixedState(new Vector3fx(0, 0, 0), new Quaternionf(), gameTime));
 
                 GameState gameState = game.get(GameState.class);
                 gameState.addEntity(entity);

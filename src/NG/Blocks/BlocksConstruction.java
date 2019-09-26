@@ -6,6 +6,7 @@ import NG.Blocks.Types.PieceType;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.Color4f;
+import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import NG.Entities.Entity;
 import NG.Entities.FixedState;
@@ -15,27 +16,33 @@ import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MatrixStack.ShadowMatrix;
 import NG.Storable;
 import NG.Tools.BuoyancyComputation;
+import NG.Tools.Logger;
 import NG.Tools.Toolbox;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-import org.joml.Vector3ic;
+import org.joml.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static NG.Blocks.BlocksConstruction._ClassVersion.INITIAL;
 
 /**
  * An entity made from block grids
  * @author Geert van Ieperen created on 14-8-2019.
  */
 public class BlocksConstruction extends MovingEntity {
-    public static final float UNIT_MASS_TO_GRAVITY = 0.1f;
+    public static final float UNIT_MASS_TO_GRAVITY = 0.01f;
+    private static final float WATER_RESIST_FACTOR = 5f;
+    private static final float AIR_RESIST_FACTOR = 0.5f;
     private List<BlockSubGrid> subgrids = new ArrayList<>();
+
+    private final boolean doPerBlockBuoyancy = false;
+    private final boolean doRotation = false;
 
     public BlocksConstruction(Vector3fxc position, Quaternionf rotation, float gameTime) {
         this(new FixedState(position, rotation, gameTime));
@@ -50,25 +57,50 @@ public class BlocksConstruction extends MovingEntity {
     public void preUpdate(float gameTime, float deltaTime) {
         BuoyancyComputation buoy = new BuoyancyComputation();
         Vector3fc thisPosition = state.position().toVector3f();
+        Quaternionfc thisOrientation = state.orientation();
 
         for (BlockSubGrid grid : subgrids) {
-            for (AbstractPiece piece : grid) {
-                Vector3f pos = piece.getStructurePosition(grid).add(thisPosition);
-                Vector3ic dim = piece.getType().size;
-                int volume = dim.x() * dim.y() * dim.z();
-                buoy.addPointVolume(pos, volume);
+            if (doPerBlockBuoyancy) {
+                for (AbstractPiece piece : grid) {
+                    Vector3f structurePosition = piece.getStructurePosition(grid).rotate(thisOrientation);
+                    Vector3f pos = structurePosition.add(thisPosition);
+                    Vector3ic dim = piece.getType().size;
+                    int volume = dim.x() * dim.y() * dim.z();
+                    buoy.addPointVolume(pos, volume);
+                }
+
+            } else {
+                BoundingBox localHitBox = grid.getLocalHitBox();
+                BoundingBox globalHitbox = new BoundingBox();
+                globalHitbox.unionRotated(localHitBox, grid.getStructureRotation());
+                globalHitbox.move(thisPosition);
+                Vector3f dim = localHitBox.size();
+                buoy.addAABB(globalHitbox, dim.x * dim.y * dim.z);
             }
         }
 
         float mass = getMass();
-        Vector3f rotationForce = buoy.getRotationXYZ(getCenterOfMass(), mass);
-        state.addRotation(rotationForce);
-
         float upForce = buoy.getFloatForce();
-        state.addForce(new Vector3f(0, 0, (upForce - mass) * UNIT_MASS_TO_GRAVITY));
+        Vector3f gravity = new Vector3f(0, 0, (upForce - mass) * UNIT_MASS_TO_GRAVITY);
+        state.addForce(gravity);
 
+        if (doRotation) {
+            Vector3fx COM = getCenterOfMass();
+            Vector3f rotationForce = buoy.getRotationXYZ(COM, mass, upForce);
+            state.addRotation(rotationForce);
+        }
+
+        float inWaterFrac = 0.5f; // assume for now
+        Vector3fc velocity = state.velocity();
+        float vSq = velocity.lengthSquared();
+        Vector3f resistForce = new Vector3f(velocity).mul(-vSq);
+        resistForce.mul(WATER_RESIST_FACTOR * inWaterFrac + AIR_RESIST_FACTOR * (1 - inWaterFrac));
+        state.addForce(resistForce);
+
+//        Logger.WARN.print(gravity, resistForce, rotationForce);
         super.preUpdate(gameTime, deltaTime);
     }
+
 
     @Override
     public float getMass() {
@@ -80,7 +112,12 @@ public class BlocksConstruction extends MovingEntity {
     }
 
     @Override
-    public Vector3f getCenterOfMass() {
+    public Vector3fx getCenterOfMass() {
+        Vector3f globalCOMOffset = getLocalCenterOfMass().rotate(state.orientation());
+        return new Vector3fx(state.position()).add(globalCOMOffset);
+    }
+
+    public Vector3f getLocalCenterOfMass() {
         Vector3f COM = new Vector3f();
         float totalMass = 0;
 
@@ -102,21 +139,21 @@ public class BlocksConstruction extends MovingEntity {
             for (BlockSubGrid subgrid : subgrids) {
                 subgrid.draw(gl, this, renderTime);
             }
-            gl.translate(getCenterOfMass());
+            gl.translate(getLocalCenterOfMass());
             Toolbox.draw3DPointer(gl);
         }
         gl.popMatrix();
 
-        cleanStatesUntil(renderTime);
+        disposeStatesUntil(renderTime);
     }
 
     @Override
     public BoundingBox getHitbox(float time) {
         BoundingBox box = new BoundingBox();
-        Quaternionf orientation = getStateAt(time).orientation();
+        Quaternionfc orientation = getStateAt(time).orientation();
 
         for (BlockSubGrid subgrid : subgrids) {
-            box.unionRotated(subgrid.getHitBox(), orientation);
+            box.unionRotated(subgrid.getLocalHitBox(), orientation);
         }
 
         box.move(getStateAt(time).position());
@@ -194,6 +231,7 @@ public class BlocksConstruction extends MovingEntity {
     @Override
     public void writeToDataStream(DataOutputStream out) throws IOException {
         Storable.write(out, state);
+        Storable.writeEnum(out, INITIAL);
 
         HashMap<PieceType, Integer> types = new HashMap<>();
 
@@ -211,7 +249,7 @@ public class BlocksConstruction extends MovingEntity {
 
         out.writeInt(sorted.length);
         for (PieceType type : sorted) {
-//            String identifier = type.manufacturer + "." + type.name;
+            out.writeUTF(type.category);
             out.writeUTF(type.name);
         }
 
@@ -221,13 +259,35 @@ public class BlocksConstruction extends MovingEntity {
 
     public BlocksConstruction(DataInputStream in) throws IOException, ClassNotFoundException {
         super(Storable.read(in, State.class));
+        _ClassVersion version = Storable.readEnum(in, _ClassVersion.class);
 
         int nrOfTypes = in.readInt();
         PieceType[] typeMap = new PieceType[nrOfTypes];
-        for (int i = 0; i < nrOfTypes; i++) {
-            String pieceName = in.readUTF();
-            // TODO more robust piece matching
-            typeMap[i] = PieceTypeCollection.cheatCache.get(pieceName);
+
+        switch (version) {
+            case INITIAL:
+                for (int i = 0; i < nrOfTypes; i++) {
+                    String manufacturer = in.readUTF();
+                    String pieceName = in.readUTF();
+
+                    PieceTypeCollection manf = PieceTypeCollection.allCollections.get(manufacturer);
+                    if (manf == null) {
+                        Logger.ERROR.print("Could not find manufacturer " + manufacturer);
+                        break;
+                    }
+
+                    PieceType piece = manf.getByName(pieceName);
+                    if (piece == null) {
+                        Logger.ERROR.print("Could not find block type " + pieceName + " of manufacturer " + manufacturer);
+                        break;
+                    }
+
+                    typeMap[i] = piece;
+                }
+                break;
+
+            default:
+                throw new IOException("Entity version " + version);
         }
 
         int nrOfGrids = in.readInt();
@@ -295,5 +355,9 @@ public class BlocksConstruction extends MovingEntity {
         public BlockSubGrid getGrid() {
             return target;
         }
+    }
+
+    enum _ClassVersion {
+        INITIAL,
     }
 }

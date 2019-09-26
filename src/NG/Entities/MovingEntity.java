@@ -22,7 +22,7 @@ public abstract class MovingEntity implements Entity {
 
     @Override
     public void preUpdate(float gameTime, float deltaTime) {
-        state.update(gameTime);
+        state.updateAround(gameTime, getCenterOfMass());
     }
 
     @Override
@@ -53,7 +53,7 @@ public abstract class MovingEntity implements Entity {
         pastStates.add(newState.copy(), time);
     }
 
-    public void cleanStatesUntil(float minimumTime){
+    public void disposeStatesUntil(float minimumTime){
         pastStates.removeUntil(minimumTime);
     }
 
@@ -74,7 +74,7 @@ public abstract class MovingEntity implements Entity {
 
     public abstract float getMass();
 
-    public abstract Vector3f getCenterOfMass();
+    public abstract Vector3fx getCenterOfMass();
 
     /**
      * calculates the new velocity of the target entity, when colliding with other on the given moment in time.

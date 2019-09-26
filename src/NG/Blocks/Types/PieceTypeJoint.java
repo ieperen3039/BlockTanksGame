@@ -25,9 +25,9 @@ public class PieceTypeJoint extends PieceType {
             String name,
             MeshFile rootMesh, Shape rootBox, Vector3ic rootSize, List<Vector3ic> rootConnections, int rootFStart,
             float mass, PieceType headPiece, char axis, Vector3fc jointOffset, Vector3fc headOffset,
-            boolean hasAngleLimit, float minAngle, float maxAngle
+            boolean hasAngleLimit, float minAngle, float maxAngle, String category
     ) {
-        super(name, rootMesh, rootBox, rootSize, mass, rootConnections, rootFStart);
+        super(name, rootMesh, rootBox, rootSize, mass, category, rootConnections, rootFStart);
         this.headPiece = headPiece;
         this.axis = new Vector3i(
                 (axis == 'x') ? 1 : 0,
@@ -44,12 +44,12 @@ public class PieceTypeJoint extends PieceType {
     public PieceTypeJoint(
             String name, PieceType bottomPiece, PieceType topPiece, char axis, Vector3fc jointOffset,
             Vector3fc headOffset,
-            boolean hasAngleLimit, float minAngle, float maxAngle
+            boolean hasAngleLimit, float minAngle, float maxAngle, String category
     ) {
         this(
                 name, bottomPiece.meshFile, bottomPiece.hitbox, bottomPiece.size,
                 bottomPiece.connections, bottomPiece.femaleStart, bottomPiece.mass, topPiece, axis,
-                jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle
+                jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle, category
         );
     }
 

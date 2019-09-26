@@ -44,7 +44,7 @@ public abstract class Projectile extends MovingEntity {
         }
         gl.popMatrix();
 
-        cleanStatesUntil(now);
+        disposeStatesUntil(now);
     }
 
     /**

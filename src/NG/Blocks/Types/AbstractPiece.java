@@ -213,10 +213,12 @@ public abstract class AbstractPiece {
 
     public void setPosition(Vector3ic position) {
         this.position.set(position);
+        recalculateHitbox();
     }
 
     public void setPosition(int x, int y, int z) {
         this.position.set(x, y, z);
+        recalculateHitbox();
     }
 
     public void move(int x, int y, int z) {

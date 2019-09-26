@@ -6,6 +6,7 @@ import NG.Storable;
 import NG.Tools.Toolbox;
 import NG.Tools.Vectors;
 import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -37,9 +38,9 @@ public class FixedState implements State {
      * @param time        the time reporesented by this state. Only influences the result of {@link #update(float)}
      *                    and {@link State#interpolateFraction(State, float)}
      */
-    public FixedState(Vector3fxc position, Quaternionf orientation, float time) {
+    public FixedState(Vector3fxc position, Quaternionfc orientation, float time) {
         this.position = new Vector3fx(position);
-        this.orientation = new Quaternionf(orientation);
+        this.orientation = new Quaternionf().set(orientation);
         this.time = time;
     }
 
@@ -80,12 +81,17 @@ public class FixedState implements State {
         return time;
     }
 
+    @Override
+    public void setTime(float newTime) {
+        this.time = newTime;
+    }
+
     /**
      * changes the time of this state. This is only effective when using {@link State#interpolateFraction(State, float)}
      * @param gameTime the new time of this state.
      */
     public void update(float gameTime) {
-        this.time = gameTime;
+        setTime(gameTime);
     }
 
     @Override
