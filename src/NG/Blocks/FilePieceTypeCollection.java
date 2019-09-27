@@ -2,10 +2,13 @@ package NG.Blocks;
 
 import NG.Blocks.Types.PieceType;
 import NG.Blocks.Types.PieceTypeJoint;
+import NG.Blocks.Types.PieceTypePropeller;
+import NG.DataStructures.Generic.Pair;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
 import NG.Tools.Directory;
 import NG.Tools.Toolbox;
+import NG.Tools.Vectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joml.*;
@@ -85,24 +88,9 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode massNode = block.findValue("mass");
             float mass = (massNode != null) ? massNode.floatValue() : 0;
 
-            List<Vector3ic> connections = new ArrayList<>();
-            JsonNode mConnectionNode = block.findValue("topPoints");
-            if (mConnectionNode != null) {
-                for (JsonNode point : mConnectionNode) {
-                    connections.add(readVector3i(point));
-                }
-            }
-            int femaleStart = connections.size();
+            Pair<List<Vector3ic>, Integer> connections = getConnections(block);
 
-            JsonNode fConnectionNode = block.findValue("bottomPoints");
-            if (fConnectionNode != null) {
-                for (JsonNode point : fConnectionNode) {
-                    connections.add(readVector3i(point));
-                }
-            }
-            PieceType pieceType;
-
-            pieceType = new PieceType(name, mesh, shape, size, mass, manufacturer, connections, femaleStart);
+            PieceType pieceType = new PieceType(name, manufacturer, mesh, shape, size, mass, connections.left, connections.right);
 
             JsonNode hiddenNode = block.findValue("hidden");
             if (hiddenNode == null || !hiddenNode.asBoolean()) {
@@ -115,7 +103,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
         /* joints */
 
         JsonNode jointsNode = root.findValue("joints");
-        fields = jointsNode.fields();
+        fields = jointsNode != null ? jointsNode.fields() : Collections.emptyIterator();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> jointNode = fields.next();
             String name = jointNode.getKey();
@@ -160,10 +148,63 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode hOffNode = joint.findValue("headOffset");
             Vector3fc headOffset = readVector3f(hOffNode).mul(SCALE, SCALE, SCALE);
 
-            blocks.put(name, new PieceTypeJoint(name, bottomPiece, topPiece, axis, jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle, manufacturer));
+            blocks.put(name, new PieceTypeJoint(name, manufacturer, bottomPiece, topPiece, axis, jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle));
+        }
+
+        /* propellers */
+        JsonNode wheelsNode = root.findValue("propellers");
+        fields = wheelsNode != null ? wheelsNode.fields() : Collections.emptyIterator();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> wheelNode = fields.next();
+            String name = wheelNode.getKey();
+            JsonNode wheel = wheelNode.getValue();
+
+            JsonNode bottomNode = wheel.findValue("axis");
+            PieceType axisPiece = allBlocks.get(bottomNode.textValue());
+            assert axisPiece != null : name + " axis field "+bottomNode.textValue()+" does not match a known block";
+
+            JsonNode propMeshNode = wheel.findValue("propellerMesh");
+            MeshFile propMesh;
+            if (propMeshNode != null) {
+                String meshFile = propMeshNode.textValue();
+                propMesh = MeshFile.loadFile(path.resolve(meshFile),
+                        Vectors.O,
+                        new Vector3f(SCALE, SCALE, SCALE)
+                );
+
+            } else {
+                propMesh = MeshFile.EMPTY_FILE;
+            }
+
+            JsonNode pOffNode = wheel.findValue("propellerOffset");
+            Vector3fc propOffset = readVector3f(pOffNode).mul(SCALE, SCALE, SCALE);
+
+            blocks.put(name, new PieceTypePropeller(
+                    name, manufacturer, axisPiece, propMesh, propOffset
+            ));
         }
 
         PieceTypeCollection.allCollections.put(getCategory(), this);
+    }
+
+    private Pair<List<Vector3ic>, Integer> getConnections(JsonNode block) {
+        List<Vector3ic> connections = new ArrayList<>();
+        JsonNode mConnectionNode = block.findValue("topPoints");
+        if (mConnectionNode != null) {
+            for (JsonNode point : mConnectionNode) {
+                connections.add(readVector3i(point));
+            }
+        }
+        int femaleStart = connections.size();
+
+        JsonNode fConnectionNode = block.findValue("bottomPoints");
+        if (fConnectionNode != null) {
+            for (JsonNode point : fConnectionNode) {
+                connections.add(readVector3i(point));
+            }
+        }
+
+        return new Pair<>(connections, femaleStart);
     }
 
     public FilePieceTypeCollection(String mapName) throws IOException {

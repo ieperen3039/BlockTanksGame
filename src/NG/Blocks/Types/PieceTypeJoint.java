@@ -22,12 +22,11 @@ public class PieceTypeJoint extends PieceType {
     public final float maxAngle;
 
     public PieceTypeJoint(
-            String name,
-            MeshFile rootMesh, Shape rootBox, Vector3ic rootSize, List<Vector3ic> rootConnections, int rootFStart,
-            float mass, PieceType headPiece, char axis, Vector3fc jointOffset, Vector3fc headOffset,
-            boolean hasAngleLimit, float minAngle, float maxAngle, String category
+            String name, String category, MeshFile rootMesh, Shape rootBox, Vector3ic rootSize,
+            List<Vector3ic> rootConnections, int rootFStart, float mass, PieceType headPiece, char axis,
+            Vector3fc jointOffset, Vector3fc headOffset, boolean hasAngleLimit, float minAngle, float maxAngle
     ) {
-        super(name, rootMesh, rootBox, rootSize, mass, category, rootConnections, rootFStart);
+        super(name, category, rootMesh, rootBox, rootSize, mass, rootConnections, rootFStart);
         this.headPiece = headPiece;
         this.axis = new Vector3i(
                 (axis == 'x') ? 1 : 0,
@@ -42,14 +41,13 @@ public class PieceTypeJoint extends PieceType {
     }
 
     public PieceTypeJoint(
-            String name, PieceType bottomPiece, PieceType topPiece, char axis, Vector3fc jointOffset,
-            Vector3fc headOffset,
-            boolean hasAngleLimit, float minAngle, float maxAngle, String category
+            String name, String category, PieceType bottomPiece, PieceType topPiece, char axis, Vector3fc jointOffset,
+            Vector3fc headOffset, boolean hasAngleLimit, float minAngle, float maxAngle
     ) {
         this(
-                name, bottomPiece.meshFile, bottomPiece.hitbox, bottomPiece.size,
+                name, category, bottomPiece.meshFile, bottomPiece.hitbox, bottomPiece.dimensions,
                 bottomPiece.connections, bottomPiece.femaleStart, bottomPiece.mass, topPiece, axis,
-                jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle, category
+                jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle
         );
     }
 

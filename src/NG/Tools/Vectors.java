@@ -346,6 +346,19 @@ public final class Vectors {
         return alpha.distanceSquared(beta) < VECTOR_EQUALITY_DIST_SQ;
     }
 
+    public static float getDistanceSqPointLine(Vector3f lineDirection, Vector3f vecToOrigin) {
+        float d21x = lineDirection.x();
+        float d21y = lineDirection.y();
+        float d21z = lineDirection.z();
+        float d10x = vecToOrigin.x() + lineDirection.x();
+        float d10y = vecToOrigin.y() + lineDirection.y();
+        float d10z = vecToOrigin.z() + lineDirection.z();
+        float cx = d21y * d10z - d21z * d10y;
+        float cy = d21z * d10x - d21x * d10z;
+        float cz = d21x * d10y - d21y * d10x;
+        return (cx * cx + cy * cy + cz * cz) / (d21x * d21x + d21y * d21y + d21z * d21z);
+    }
+
     public static final class Scaling {
         public static final Vector3fc UNIFORM = new Vector3f(1, 1, 1);
         /** scaling that mirrors in the X direction */

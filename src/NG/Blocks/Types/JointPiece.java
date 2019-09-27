@@ -14,31 +14,12 @@ import java.util.Map;
  * @author Geert van Ieperen created on 19-8-2019.
  */
 public class JointPiece extends AbstractPiece {
-    private Vector3i axis;
     private PieceTypeJoint type;
     private BlockSubGrid subgrid;
 
     JointPiece(PieceTypeJoint type, Vector3ic position, int rotation, Color4f color) {
         super(position, rotation, color);
         this.type = type;
-        axis = new Vector3i(type.axis);
-
-        for (byte i = 0; i < rotation; i++) {
-            //noinspection SuspiciousNameCombination
-            axis.set(-axis.y, axis.x, axis.z);
-        }
-    }
-
-    @Override
-    public void rotateZ(boolean clockwise) {
-        super.rotateZ(clockwise);
-        if (clockwise) {
-            //noinspection SuspiciousNameCombination
-            axis.set(-axis.y, axis.x, axis.z);
-        } else {
-            //noinspection SuspiciousNameCombination
-            axis.set(axis.y, -axis.x, axis.z);
-        }
     }
 
     @Override
@@ -62,6 +43,11 @@ public class JointPiece extends AbstractPiece {
     }
 
     public Vector3ic getAxis() {
+        Vector3i axis = new Vector3i(type.axis);
+        for (byte i = 0; i < rotation; i++) {
+            //noinspection SuspiciousNameCombination
+            axis.set(-axis.y, axis.x, axis.z);
+        }
         return axis;
     }
 

@@ -21,6 +21,7 @@ Description of blocks.json format:
       "hidden" : /true or false/, // optional. When false or missing, this block is shown in the list.
     } // multiple blocks can be added, separated with commas
   }
+
   "joints" : { // all fields are required
     "/name of the joint, may include spaces/" : {
       "bottom" : "/name of the bottom part as defined in "blocks"/", // usually, both bottom and top have ("hidden" : true)
@@ -31,6 +32,10 @@ Description of blocks.json format:
       "minAngle" : /minimum angle/ // in degrees
       "maxAngle" : /maximum angle/ // in degrees
     }
+  }
+
+  "propellers" : {
+    "/name of the block, may include spaces/"
   }
 }
 End description of blocks.json format. Order of same-level components does not matter.

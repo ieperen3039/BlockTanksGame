@@ -14,7 +14,6 @@ import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
 import NG.Entities.Entity;
 import NG.Entities.EntityList;
-import NG.Entities.FixedState;
 import NG.Entities.MovingEntity;
 import NG.GUIMenu.Components.SButton;
 import NG.GUIMenu.Components.SFiller;
@@ -293,8 +292,9 @@ public class MainGame implements ModLoader {
 
     private void openGame() {
         gameService.select(game);
+        Settings settings = game.get(Settings.class);
 
-        AbstractGameLoop gameLoop = new AbstractGameLoop("gameState", 30) {
+        AbstractGameLoop gameLoop = new AbstractGameLoop("gameState", settings.TARGET_TPS) {
             @Override
             protected void update(float realDelta) {
                 GameTimer timer = game.get(GameTimer.class);
@@ -315,7 +315,7 @@ public class MainGame implements ModLoader {
 
         new Thread(() -> {
             try {
-                MeshMap map = new MeshMap(Directory.maps.getPath("map2.ply"), game.get(Settings.class).DEBUG);
+                MeshMap map = new MeshMap(Directory.maps.getPath("map2.ply"), settings.DEBUG);
                 map.init(game);
                 GameMap original = game.get(GameMap.class);
                 game.add(map);
@@ -324,7 +324,7 @@ public class MainGame implements ModLoader {
 
                 float gameTime = game.get(GameTimer.class).getGametime();
                 MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("temp.conbi"), MovingEntity.class);
-                entity.setState(new FixedState(new Vector3fx(0, 0, 0), new Quaternionf(), gameTime));
+                entity.setState(new Vector3fx(0, 0, 1), new Quaternionf(), gameTime);
 
                 GameState gameState = game.get(GameState.class);
                 gameState.addEntity(entity);

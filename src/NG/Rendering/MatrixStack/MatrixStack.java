@@ -78,16 +78,16 @@ public interface MatrixStack {
     }
 
     /**
-     * @param axis  the axis to rotate around
      * @param angle the angle to rotate in radians
+     * @param axis  the axis to rotate around
      * @see #rotate(float, float, float, float)
      */
-    default void rotate(Vector3fc axis, float angle) {
+    default void rotate(float angle, Vector3fc axis) {
         rotate(angle, axis.x(), axis.y(), axis.z());
     }
 
     /**
-     * @see #rotate(Vector3fc, float)
+     * @see #rotate(float, Vector3fc)
      * @param rotation
      */
     void rotate(Quaternionfc rotation);

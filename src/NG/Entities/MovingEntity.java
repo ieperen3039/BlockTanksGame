@@ -3,6 +3,9 @@ package NG.Entities;
 import NG.DataStructures.Generic.Pair;
 import NG.DataStructures.Interpolation.StateInterpolator;
 import NG.DataStructures.Vector3fx;
+import NG.DataStructures.Vector3fxc;
+import NG.Tools.Vectors;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 
 /**
@@ -35,7 +38,7 @@ public abstract class MovingEntity implements Entity {
         if (gameTime == stateTime) return state;
 
         Pair<State, Float> lastState = pastStates.getLast();
-        if (lastState.right < gameTime){
+        if (lastState.right < gameTime) {
             lastState.left.interpolateTime(state, gameTime);
         }
 
@@ -43,9 +46,9 @@ public abstract class MovingEntity implements Entity {
     }
 
     /**
-         * sets the state of this entity, as per teleportation. Unspecified properties should be reset.
-         * @param newState the new state properties.
-         */
+     * sets the state of this entity, as per teleportation. Unspecified properties should be reset.
+     * @param newState the new state properties.
+     */
     public void setState(State newState) {
         float time = newState.time();
         pastStates.add(getStateAt(time), time);
@@ -53,7 +56,7 @@ public abstract class MovingEntity implements Entity {
         pastStates.add(newState.copy(), time);
     }
 
-    public void disposeStatesUntil(float minimumTime){
+    public void disposeStatesUntil(float minimumTime) {
         pastStates.removeUntil(minimumTime);
     }
 
@@ -72,15 +75,25 @@ public abstract class MovingEntity implements Entity {
         return other != this;
     }
 
+    /**
+     * @return mass in kg
+     */
     public abstract float getMass();
 
-    public abstract Vector3fx getCenterOfMass();
+    /**
+     * @return world-space center of mass of this object at the current state
+     */
+    protected abstract Vector3fx getCenterOfMass();
+
+    public void setState(Vector3fxc position, Quaternionfc orientation, float gameTime) {
+        state.set(position, orientation, Vectors.O, gameTime);
+    }
 
     /**
-     * calculates the new velocity of the target entity, when colliding with other on the given moment in time.
-     * This assumes the centers of mass of both entities collide as if they where spheres.
-     * @param target the entity to recalculate the speed of
-     * @param other the entity which is collided with
+     * calculates the new velocity of the target entity, when colliding with other on the given moment in time. This
+     * assumes the centers of mass of both entities collide as if they where spheres.
+     * @param target        the entity to recalculate the speed of
+     * @param other         the entity which is collided with
      * @param collisionTime the moment of collision
      * @return the new velocity
      */

@@ -31,10 +31,15 @@ import java.util.Map;
  */
 public abstract class AbstractPiece {
     public static final boolean RENDER_STUDS = true;
-    /* size of a 1x1x1 block, base in meters, scaled by 100 */
-    public static final float BLOCK_BASE = 0.8f;
-    public static final float BLOCK_HEIGHT = 0.32f;
+
+    public static final float BLOCK_BASE = 0.8f; // m
+    public static final float BLOCK_HEIGHT = 0.32f; // m
+    /** size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final Vector3fc BLOCK_SIZE = new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT);
+    /** weight of a scaled 1x1x1 block, in kg */
+    public static final float BLOCK_WEIGHT = 96f; // kg // = 0.096g * (100 * 100 * 100)
+    /** volume of a scaled 1x1x1 block, in m^3 */
+    public static final float BLOCK_VOLUME = BLOCK_BASE * BLOCK_BASE * BLOCK_HEIGHT;
 
     private static final MeshFile STUD = MeshFile.loadFileRequired(Directory.meshes.getPath("stud.ply"));
     protected final Vector3i position;
@@ -95,7 +100,7 @@ public abstract class AbstractPiece {
     }
 
     /**
-     * Draw the actual element. Overriding classes can use this to add additional details
+     * Draw the actual element. Overriding classes can use this to add additional details. GL does not have to be reverted.
      * @param gl         the gl object, positioned and rotated as this block
      * @param entity     the entity this block is part of
      * @param renderTime the current
@@ -141,7 +146,7 @@ public abstract class AbstractPiece {
      * @see #getHitBox()
      */
     protected void recalculateHitbox() {
-        Vector3i travel = new Vector3i(getType().size).sub(1, 1, 1);
+        Vector3i travel = new Vector3i(getType().dimensions).sub(1, 1, 1);
         Vector3i virtualPos = new Vector3i(position);
 
         if (travel.x < 0) {
@@ -243,6 +248,13 @@ public abstract class AbstractPiece {
     }
 
     public static void rotateQuarters(Vector3i vector, byte quarters) {
+        for (byte i = 0; i < quarters; i++) {
+            //noinspection SuspiciousNameCombination
+            vector.set(-vector.y, vector.x, vector.z);
+        }
+    }
+
+    public static void rotateQuarters(Vector3f vector, byte quarters) {
         for (byte i = 0; i < quarters; i++) {
             //noinspection SuspiciousNameCombination
             vector.set(-vector.y, vector.x, vector.z);

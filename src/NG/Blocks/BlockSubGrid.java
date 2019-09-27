@@ -30,7 +30,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     private static final float TAU = (float) Math.PI * 2;
     protected BucketGrid3i<AbstractPiece> blocks;
     protected AABBi bounds;
-    protected float totalMass;
+    protected float totalMass = 0;
     private Vector3f centerOfMass = new Vector3f();
 
     private Quaternionf rotation;

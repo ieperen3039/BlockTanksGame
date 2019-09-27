@@ -1,33 +1,30 @@
 package NG.Tools;
 
-import NG.Blocks.BlocksConstruction;
 import NG.CollisionDetection.BoundingBox;
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
+
+import static NG.Settings.Settings.GRAVITY_CONSTANT;
 
 /**
+ * Assuming Z is up
  * @author Geert van Ieperen created on 22-9-2019.
  */
 public class BuoyancyComputation {
-    public final float fluidLevel; // height in z-axis of the fluid
-    public final float fluidDensity; // in units of 1x1x1 block masses
+    public static final float FLUID_LEVEL = 0; // height in z-axis of the fluid
+    public final float fluidDensity; // in kg / m3
 
-    public Vector3f centerOfVolume = new Vector3f();
+    public Vector3fx centerOfVolume = new Vector3fx();
     public float volumeTotal = 0;
 
     public BuoyancyComputation() {
-        this(0);
+        fluidDensity = 997f; // water
+//        fluidDensity = 500f; // a bit heavier than plastic
     }
 
-    public BuoyancyComputation(int fluidHeight) {
-        fluidDensity = 3f; // water
-        fluidLevel = fluidHeight;
-    }
-
-    public void addPointVolume(Vector3fc center, float volume) {
-        if (center.z() < fluidLevel) {
+    public void addPointVolume(Vector3fxc center, float volume) {
+        if (center.z() < FLUID_LEVEL) {
             if (volumeTotal == 0) {
                 centerOfVolume.set(center);
                 volumeTotal = volume;
@@ -35,7 +32,7 @@ public class BuoyancyComputation {
             } else {
                 // weighted sum
                 centerOfVolume.mul(volumeTotal)
-                        .add(new Vector3f(center).mul(volume));
+                        .add(new Vector3fx(center).mul(volume));
                 volumeTotal += volume;
                 centerOfVolume.div(volumeTotal);
             }
@@ -57,31 +54,31 @@ public class BuoyancyComputation {
         }
 
         float distSq = dx * dx + dy * dy; // assuming z is up
-        float torque = (floatForce * BlocksConstruction.UNIT_MASS_TO_GRAVITY) / distSq;
+        float torque = floatForce * distSq;
         vecMassToVolume.normalize().cross(Vectors.Z).mul(torque / mass); // probably wrong, but close enough
-        Logger.WARN.print(vecMassToVolume, distSq, torque);
         return vecMassToVolume;
     }
 
     /**
-     * @return the magnitude of the upward float force in units of 1-block weight
+     * @return the magnitude of the upward float force in Newtons
      */
     public float getFloatForce() {
-        float pressure = fluidDensity * (fluidLevel - centerOfVolume.z);
-        return volumeTotal * pressure;
+        return fluidDensity * GRAVITY_CONSTANT * volumeTotal;
     }
 
     public void addAABB(BoundingBox box, float volume) {
-        Vector3f center = box.getMinimum().lerp(box.getMaximum(), 0.5f);
-        if (box.maxZ < fluidLevel) {
+        Vector3fx center = new Vector3fx(box.getMinimum().lerp(box.getMaximum(), 0.5f));
+        if (box.maxZ < FLUID_LEVEL) {
             addPointVolume(center, volume);
 
-        } else if (box.minZ < fluidLevel) {
-
-            float submergedPart = fluidLevel - box.minZ;
-            float submergedFraction = (box.maxZ - box.minZ) / (submergedPart);
-            center.z = -submergedPart;
+        } else if (box.minZ < FLUID_LEVEL) {
+            center.mul(1, 1, 0).add(0, 0, -(FLUID_LEVEL - box.minZ)); // set z to -submerged
+            float submergedFraction = getSubmergedFraction(box);
             addPointVolume(center, volume * submergedFraction);
         }
+    }
+
+    public float getSubmergedFraction(BoundingBox box) {
+        return (FLUID_LEVEL - box.minZ) / (box.maxZ - box.minZ);
     }
 }

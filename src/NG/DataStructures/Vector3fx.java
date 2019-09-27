@@ -740,6 +740,15 @@ public class Vector3fx implements Vector3fxc {
         return z;
     }
 
+    @Override
+    public Vector3f subToVector3f(Vector3fx other, Vector3f dest) {
+        return dest.set(
+                fixedToFloat(x - other.x),
+                fixedToFloat(y - other.y),
+                fixedToFloat(z - other.z)
+        );
+    }
+
     public static Vector3fx getWithBits(int xBit, int yBit, int zBit) {
         Vector3fx v = new Vector3fx();
         v.x = xBit;

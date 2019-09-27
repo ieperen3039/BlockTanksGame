@@ -84,8 +84,8 @@ public class BasicBlocks implements PieceTypeCollection {
 
         PieceType newBlock = new PieceType(
                 String.format("block %dx%dx%d", xSize, ySize, zSize),
-                block.toMeshFile(), block.toShape(), size,
-                xSize * ySize * zSize, CATEGORY, Arrays.asList(connections), nrOfStuds
+                CATEGORY, block.toMeshFile(), block.toShape(), size,
+                xSize * ySize * zSize, Arrays.asList(connections), nrOfStuds
         );
 
         cache.put(size, newBlock);
@@ -112,8 +112,8 @@ public class BasicBlocks implements PieceTypeCollection {
         // plates are not added to the cache
         return new PieceType(
                 String.format("plate %dx%d", xSize, ySize),
-                block.toMeshFile(), block.toShape(), new Vector3i(xSize, ySize, 0),
-                xSize * ySize * 0.01f, CATEGORY, Arrays.asList(connections), nrOfStuds
+                CATEGORY, block.toMeshFile(), block.toShape(), new Vector3i(xSize, ySize, 0),
+                xSize * ySize * 0.01f, Arrays.asList(connections), nrOfStuds
         );
     }
 

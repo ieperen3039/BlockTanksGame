@@ -18,14 +18,15 @@ import java.io.IOException;
  * @author Geert van Ieperen created on 26-7-2019.
  */
 public class MutableState implements State {
+    public static final float LERP_DOT_THRESHOLD = 0.1f;
     private float time;
     private Vector3fx position;
     private Vector3f velocity;
     private Quaternionf orientation;
     private Quaternionf rotationSpeed;
 
-    private Vector3f netForce = new Vector3f();
-    private Vector3f netTorque = new Vector3f();
+    private Vector3f netPositionAcc = new Vector3f();
+    private Vector3f netRotationAcc = new Vector3f();
 
     public MutableState(float time, Vector3fxc position, Vector3fc velocity, Quaternionf orientation) {
         this(time, position, velocity, orientation, new Quaternionf());
@@ -95,22 +96,22 @@ public class MutableState implements State {
     public void updateAround(float gameTime, Vector3fxc pivot){
         float deltaTime = gameTime - time;
 
-        velocity.add(netForce.mul(deltaTime));
+        // F = m * a ; a = dv/dt
+        // a = F/m ; dv = a * dt = F * (dt/m)
+        velocity.add(netPositionAcc.mul(deltaTime));
+        netPositionAcc.zero();
         Vector3f movement = new Vector3f(velocity).mul(deltaTime);
         position.add(movement);
 
-        netTorque.mul(deltaTime);
-        Quaternionf rotAcc = new Quaternionf().rotateXYZ(netTorque.x(), netTorque.y(), netTorque.z());
-        rotationSpeed.mul(rotAcc);
-
-        Quaternionf rotation = new Quaternionf().nlerpIterative(rotationSpeed, deltaTime, 0.1f).normalize();
+        netRotationAcc.mul(deltaTime);
+        rotationSpeed.rotateXYZ(netRotationAcc.x(), netRotationAcc.y(), netRotationAcc.z());
+        netRotationAcc.zero();
+        Quaternionf rotation = new Quaternionf().nlerpIterative(rotationSpeed, deltaTime, LERP_DOT_THRESHOLD).normalize();
         orientation.mul(rotation);
 
         position.sub(pivot).rotate(rotation).add(pivot);
 
         time = gameTime;
-        netForce.zero();
-        netTorque.zero();
     }
 
     public void set(State source) {
@@ -127,14 +128,22 @@ public class MutableState implements State {
         }
     }
 
+    public void set(Vector3fxc position, Quaternionfc orientation, Vector3fc velocity, float gameTime) {
+        this.position.set(position);
+        this.orientation.set(orientation);
+        this.time = gameTime;
+        this.velocity.set(velocity);
+    }
+
     /**
      * Applies the given force to this state. At the next call of {@link #update(float)}, the accumulated forces are
      * applied and reset to zero.
      * @param force a force vector on this state
+     * @param mass
      * @return this
      */
-    public MutableState addForce(Vector3fc force) {
-        netForce.add(force);
+    public MutableState addForce(Vector3fc force, float mass) {
+        netPositionAcc.add(new Vector3f(force).div(mass));
         return this;
     }
 
@@ -142,10 +151,11 @@ public class MutableState implements State {
      * Applies the given torque to this state. At the next call of {@link #update(float)}, the accumulated forces are
      * applied to the rotation and reset to zero.
      * @param torqueVector a vector with the torque components.
+     * @param inertia the rotational inertia in the direction of the rotation
      * @return this
      */
-    public MutableState addRotation(Vector3fc torqueVector) {
-        netTorque.add(torqueVector);
+    public MutableState addRotation(Vector3fc torqueVector, float inertia) {
+        netRotationAcc.add(new Vector3f(torqueVector).div(inertia));
         return this;
     }
 
@@ -184,5 +194,4 @@ public class MutableState implements State {
         rotationSpeed = Storable.readQuaternionf(in);
         time = in.readFloat();
     }
-
 }

@@ -263,4 +263,20 @@ public interface Vector3fxc {
      * @return the bitwise representation of the z component
      */
     int zBits();
+
+    /**
+     * subtracts the other vector from this vector and returns a new floating-point vector holding the result
+     * @param other another fixed-point vector
+     * @return a new floating point vector with the value (this - other)
+     */
+    default Vector3f subToVector3f(Vector3fx other) {
+        return subToVector3f(other, new Vector3f());
+    }
+
+    /**
+     * subtracts the other vector from this vector and stores the floating-point result in dest.
+     * @param other another fixed-point vector
+     * @return a new floating point vector with the value (this - other)
+     */
+    Vector3f subToVector3f(Vector3fx other, Vector3f dest);
 }

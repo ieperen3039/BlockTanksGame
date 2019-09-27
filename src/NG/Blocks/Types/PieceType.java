@@ -6,9 +6,13 @@ import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector3ic;
 
 import java.util.List;
+
+import static NG.Blocks.Types.AbstractPiece.BLOCK_SIZE;
 
 /**
  * @author Geert van Ieperen created on 16-8-2019.
@@ -16,7 +20,8 @@ import java.util.List;
 public class PieceType {
     public final String name;
     public final Shape hitbox;
-    public final Vector3ic size;
+    public final Vector3ic dimensions; // in block dimensions
+    public final Vector3fc realSize; // in m
     public final float mass;
     public final String category;
 
@@ -27,14 +32,15 @@ public class PieceType {
     protected int femaleStart;
 
     public PieceType(
-            String name, MeshFile file, Shape hitbox, Vector3ic size, float mass, String category,
+            String name, String category, MeshFile file, Shape hitbox, Vector3ic size, float mass,
             List<Vector3ic> connections, int femaleStart
     ) {
         this.name = name;
         this.meshFile = file;
         this.hitbox = hitbox;
-        this.size = size;
-        this.mass = mass;
+        this.dimensions = size;
+        this.realSize = new Vector3f(size).mul(BLOCK_SIZE);
+        this.mass = mass * AbstractPiece.BLOCK_WEIGHT;
         this.category = category;
         this.connections = connections;
         this.femaleStart = femaleStart;

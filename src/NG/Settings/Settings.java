@@ -15,10 +15,7 @@ public class Settings {
     public boolean RENDER_HITBOXES = DEBUG;
 
     // game engine settings
-    public int TARGET_TPS = 30;
-    public static final int CHUNK_SIZE = 16; // number of tiles in a chunk
-    public static final float TILE_SIZE = 2f;
-    public static final float TILE_SIZE_Z = 0.5f;
+    public int TARGET_TPS = 100;
     public static final float GRAVITY_CONSTANT = 5f; // 9,81
     public static final float MIN_COLLISION_CHECK_SQ = 1e-6f; // squared
 
@@ -26,7 +23,7 @@ public class Settings {
     public static final float FOV = (float) Math.toRadians(30);
     public static final float Z_NEAR = 0.1f;
     public static final float Z_FAR = 5000;
-    public int TARGET_FPS = 30;
+    public int TARGET_FPS = 45;
     public boolean V_SYNC = false;
     public int DEFAULT_WINDOW_WIDTH = 1600;
     public int DEFAULT_WINDOW_HEIGHT = 800;
