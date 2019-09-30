@@ -1,7 +1,7 @@
 package NG.Core;
 
 import NG.Entities.MovingEntity;
-import NG.InputHandling.Controllers.Controller;
+import NG.InputHandling.Controllers.BoatControls;
 
 /**
  * one of the players in the game
@@ -9,5 +9,5 @@ import NG.InputHandling.Controllers.Controller;
  */
 public class Player {
     public MovingEntity entity;
-    public Controller controller;
+    public BoatControls controller;
 }

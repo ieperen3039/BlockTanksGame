@@ -1,5 +1,6 @@
 package NG.Blocks.Types;
 
+import NG.Blocks.BasicBlocks;
 import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
 import NG.Rendering.MatrixStack.SGL;
@@ -40,7 +41,7 @@ public class PieceType {
         this.hitbox = hitbox;
         this.dimensions = size;
         this.realSize = new Vector3f(size).mul(BLOCK_SIZE);
-        this.mass = mass * AbstractPiece.BLOCK_WEIGHT;
+        this.mass = mass * BasicBlocks.BLOCK_WEIGHT;
         this.category = category;
         this.connections = connections;
         this.femaleStart = femaleStart;

@@ -1,10 +1,11 @@
 package NG.Core;
 
 import NG.Blocks.BasicBlocks;
+import NG.Blocks.BlocksConstruction;
 import NG.Blocks.FilePieceTypeCollection;
 import NG.Blocks.PieceTypeCollection;
 import NG.Camera.Camera;
-import NG.Camera.Cursor;
+import NG.Camera.FollowingCamera;
 import NG.Camera.PointCenteredCamera;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.GameState;
@@ -14,7 +15,7 @@ import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
 import NG.Entities.Entity;
 import NG.Entities.EntityList;
-import NG.Entities.MovingEntity;
+import NG.Entities.State;
 import NG.GUIMenu.Components.SButton;
 import NG.GUIMenu.Components.SFiller;
 import NG.GUIMenu.Components.SFrame;
@@ -27,6 +28,7 @@ import NG.GameMap.EmptyMap;
 import NG.GameMap.GameMap;
 import NG.GameMap.MeshMap;
 import NG.InputHandling.ClickShader;
+import NG.InputHandling.Controllers.PCBoatKeyController;
 import NG.InputHandling.MouseToolCallbacks;
 import NG.Mods.JarModReader;
 import NG.Mods.Mod;
@@ -49,6 +51,7 @@ import NG.Tools.*;
 import org.joml.AABBf;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.io.IOException;
 import java.util.*;
@@ -72,6 +75,8 @@ public class MainGame implements ModLoader {
     private List<Mod> activeMods = Collections.emptyList();
     private final MouseToolCallbacks inputHandler;
     private SButton.BProps bProps = new SButton.BProps(300, 80, false, false);
+    private final GameTimeControl gameTimer;
+    private final Player player = new Player();
 
     public MainGame() throws IOException {
         Logger.DEBUG.print("Showing splash...");
@@ -87,7 +92,7 @@ public class MainGame implements ModLoader {
             Settings settings = new Settings();
             window = new GLFWWindow(Settings.GAME_NAME, new GLFWWindow.Settings(settings), true);
             renderer = new RenderLoop(settings.TARGET_FPS);
-            GameTimer gameTimer = new GameTimer(settings.RENDER_DELAY);
+            gameTimer = new GameTimeControl(settings.RENDER_DELAY);
 
             inputHandler = new MouseToolCallbacks();
             HUDManager menuHud = new FrameManagerImpl();
@@ -97,7 +102,6 @@ public class MainGame implements ModLoader {
             );
 
             HUDManager hud = new TankHUD();
-//            Camera camera = new StrategyCamera(Vectors.newZero(), 20, 10);
             Camera camera = new PointCenteredCamera(new Vector3f(20, 20, 20), Vectors.newZero());
             GameLights lights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState state = new PhysicsEngine();
@@ -109,7 +113,7 @@ public class MainGame implements ModLoader {
             );
 
             // world
-            game.add(new RenderBundle(new PhongShader())
+            game.add(new RenderBundle("World Drawing", new PhongShader())
                     .add(gl -> game.get(GameLights.class).draw(gl))
                     .add(gl -> game.get(GameMap.class).draw(gl))
                     .add(gl -> game.get(GameState.class).drawEntities(gl))
@@ -120,19 +124,22 @@ public class MainGame implements ModLoader {
             );
 
             // particles
-            game.add(new RenderBundle(new ParticleShader())
+            game.add(new RenderBundle("Particles", new ParticleShader())
                     .add(gl -> game.get(GameParticles.class).draw(gl))
             );
 
             // water
-            game.add(new RenderBundle(new WaterShader())
+            game.add(new RenderBundle("Water", new WaterShader())
                     .add(gl -> game.get(GameLights.class).draw(gl))
-                    .add(gl -> WaterShader.drawOcean(gl, Vectors.O))
+                    .add(gl -> WaterShader.drawOcean(gl, getPlayerPosition()))
             );
 
-            PieceTypeCollection fileBlocks = new FilePieceTypeCollection("Base");
-            BasicBlocks basicBlocks = new BasicBlocks();
-            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), basicBlocks, fileBlocks);
+            PieceTypeCollection[] blocks = {
+                    new BasicBlocks(),
+                    new FilePieceTypeCollection("Pivot"),
+                    new FilePieceTypeCollection("Engines")
+            };
+            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), blocks);
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
             GameLights constLights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState constState = new EntityList();
@@ -141,7 +148,7 @@ public class MainGame implements ModLoader {
                     constMenu, settings, constCamera, constLights, constState, gameTimer
             );
 
-            construction.add(new RenderBundle(new PhongShader())
+            construction.add(new RenderBundle(mainThreadName, new PhongShader())
                     .add(gl -> construction.get(GameLights.class).draw(gl))
                     .add(gl -> construction.get(GameState.class).drawEntities(gl))
                     .add(Toolbox::drawAxisFrame)
@@ -152,6 +159,17 @@ public class MainGame implements ModLoader {
         } catch (Exception ex) {
             splashWindow.dispose();
             throw ex;
+        }
+    }
+
+    protected Vector3fc getPlayerPosition() {
+        if (player.entity == null) {
+            return Vectors.O;
+
+        } else {
+            float rendertime = gameService.get(GameTimer.class).getRendertime();
+            State playerState = player.entity.getStateAt(rendertime);
+            return playerState.position().toVector3f();
         }
     }
 
@@ -292,15 +310,15 @@ public class MainGame implements ModLoader {
 
     private void openGame() {
         gameService.select(game);
+        player.controller = new PCBoatKeyController(game);
         Settings settings = game.get(Settings.class);
 
         AbstractGameLoop gameLoop = new AbstractGameLoop("gameState", settings.TARGET_TPS) {
             @Override
             protected void update(float realDelta) {
-                GameTimer timer = game.get(GameTimer.class);
-                timer.updateGameTime();
-                float gametime = timer.getGametime();
-                float deltaTime = timer.getGametimeDifference();
+                gameTimer.updateGameTime();
+                float gametime = gameTimer.getGametime();
+                float deltaTime = gameTimer.getGametimeDifference();
                 game.getAll(GameState.class).forEach(state -> state.update(gametime, deltaTime));
             }
 
@@ -323,13 +341,23 @@ public class MainGame implements ModLoader {
                 original.cleanup();
 
                 float gameTime = game.get(GameTimer.class).getGametime();
-                MovingEntity entity = Storable.readFromFile(Directory.constructions.getFile("temp.conbi"), MovingEntity.class);
+                BlocksConstruction entity = Storable.readFromFile(Directory.constructions.getFile("temp.conbi"), BlocksConstruction.class);
                 entity.setState(new Vector3fx(0, 0, 1), new Quaternionf(), gameTime);
 
                 GameState gameState = game.get(GameState.class);
+                entity.setController(player.controller);
+                player.entity = entity;
+
                 gameState.addEntity(entity);
-                gameState.addEntity(new Cursor(() -> entity.getStateAt(game.get(GameTimer.class).getRendertime())));
-                Logger.printOnline(() -> String.valueOf(entity.getHitbox(game.get(GameTimer.class).getRendertime())));
+
+                Camera camera = game.get(Camera.class);
+                game.remove(camera);
+                FollowingCamera newCamera = new FollowingCamera(entity, camera.getEye(), camera.getUpVector(), camera.vectorToFocus());
+                newCamera.init(game);
+                game.add(newCamera);
+                camera.cleanup();
+
+                Logger.printOnline(() -> Vectors.toString(getPlayerPosition()));
 
             } catch (Exception ex) {
                 Logger.ERROR.print("Could not open game", ex);

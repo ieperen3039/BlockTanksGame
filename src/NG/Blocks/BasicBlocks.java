@@ -17,6 +17,8 @@ import static NG.Blocks.Types.AbstractPiece.BLOCK_HEIGHT;
  * @author Geert van Ieperen created on 16-8-2019.
  */
 public class BasicBlocks implements PieceTypeCollection {
+    /** weight of a scaled 1x1x1 block, in kg */
+    public static final float BLOCK_WEIGHT = 96f; // kg // = 0.096g * (100 * 100 * 100)
     private static final Map<Vector3ic, PieceType> cache = new HashMap<>();
     private static final Pattern namingScheme = Pattern.compile("block (\\d+)x(\\d+)x(\\d+)");
     public static final float BLOCK_BASE_H = BLOCK_BASE / 2;

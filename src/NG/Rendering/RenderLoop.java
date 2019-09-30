@@ -5,7 +5,7 @@ import NG.Camera.StaticCamera;
 import NG.Core.AbstractGameLoop;
 import NG.Core.Game;
 import NG.Core.GameAspect;
-import NG.Core.GameTimer;
+import NG.Core.GameTimeControl;
 import NG.DataStructures.Generic.Color4f;
 import NG.GUIMenu.HUDManager;
 import NG.GUIMenu.NVGOverlay;
@@ -48,7 +48,6 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
     public RenderLoop(int targetFPS) {
         super("Renderloop", targetFPS);
         overlay = new NVGOverlay();
-        timeObserver = new TimeObserver((targetFPS / 4) + 1, true);
     }
 
     public void init(Game game) throws IOException {
@@ -76,16 +75,35 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
                 Logger.DEBUG.print("\n" + timeObserver.resultsTable());
             }
         });
+
+        if (settings.DEBUG) {
+            timeObserver = new TimeObserverImpl((getTPS() / 4) + 1, true){
+                @Override
+                protected void endTiming() {
+                    glFinish();
+                    super.endTiming();
+                }
+            };
+
+        } else {
+            timeObserver = new TimeObserver.EmptyObserver();
+        }
     }
 
     @Override
     protected void update(float deltaTime) {
         timeObserver.startNewLoop();
 
+        GLFWWindow window = game.get(GLFWWindow.class);
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+        glEnable(GL_LINE_SMOOTH);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glFinish();
+
         // current time
         float rendertime;
-        if (game.has(GameTimer.class)){
-            GameTimer gameTimer = game.get(GameTimer.class);
+        if (game.has(GameTimeControl.class)){
+            GameTimeControl gameTimer = game.get(GameTimeControl.class);
             gameTimer.updateRenderTime();
             rendertime = gameTimer.getRendertime();
 
@@ -98,16 +116,11 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
 
         if (game.has(GameLights.class)) {
             timeObserver.startTiming("ShadowMaps");
-            GameLights lights = game.get(GameLights.class);
-            lights.renderShadowMaps();
+            for (GameLights lights : game.getAll(GameLights.class)) {
+                lights.renderShadowMaps();
+            }
             timeObserver.endTiming("ShadowMaps");
         }
-
-        GLFWWindow window = game.get(GLFWWindow.class);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, window.getWidth(), window.getHeight());
-        glEnable(GL_LINE_SMOOTH);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         List<RenderBundle> renders = game.getAll(RenderBundle.class);
         for (RenderBundle renderBundle : renders) {
@@ -125,7 +138,9 @@ public class RenderLoop extends AbstractGameLoop implements GameAspect {
         timeObserver.endTiming("GUI");
 
         // update window
+        timeObserver.startTiming("Window Refresh");
         window.update();
+        timeObserver.endTiming("Window Refresh");
 
         // loop clean
         Toolbox.checkGLError();

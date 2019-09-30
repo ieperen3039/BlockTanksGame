@@ -1,4 +1,27 @@
 {
   "manufacturer" : "Jeb's Junkyard",
-  "slogan" : "Space-grade engines for a junk price!"
+  "slogan" : "Space-grade engines for a junk price!",
+
+  "blocks" : {
+    "engineMount_223" : {
+      "graphic" : "223_base.ply",
+      "size" : [2, 2, 3],
+      "topPoints" : [
+        [0, 0, 3], [0, 1, 3], [1, 0, 3], [1, 1, 3]
+      ],
+      "bottomPoints" : [
+        [0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]
+      ],
+      "hidden" : true
+    }
+  },
+
+  "propellers" : {
+    "basic prop" : {
+      "description" : "Found lying on the shore",
+      "axis" : "engineMount_223",
+      "propellerMesh" : "propSmall.ply",
+      "propellerOffset" : [0.012, 0.004, 0.0048]
+    }
+  }
 }

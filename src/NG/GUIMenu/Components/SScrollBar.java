@@ -194,6 +194,8 @@ class SScrollBar extends SComponent {
         public void mouseMoved(int xDelta, int yDelta) {
             dragBarOffsetFraction += ((float) yDelta / (getDragBarSpace() - getHeight()));
             dragBarOffsetFraction = Math.max(0, Math.min(1, dragBarOffsetFraction));
+            if (Float.isNaN(dragBarOffsetFraction)) dragBarOffsetFraction = 0;
+
             positionDragbar(dragBarOffsetFraction);
 
             int newCurrent;

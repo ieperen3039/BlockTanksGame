@@ -18,9 +18,11 @@ public class RenderBundle implements GameAspect {
     private ShaderProgram shader;
     private List<Consumer<SGL>> targets;
     private Game game;
+    private String name;
 
-    public RenderBundle(ShaderProgram shader) {
+    public RenderBundle(String name, ShaderProgram shader) {
         this.shader = shader;
+        this.name = name;
         this.targets = new ArrayList<>();
     }
 
@@ -59,6 +61,11 @@ public class RenderBundle implements GameAspect {
             }
         }
         shader.unbind();
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 
     @Override

@@ -30,11 +30,12 @@ public class WaterShader extends SceneShader {
 
     // WATER_MESH is 20x20x0 centered on (0, 0, 0)
     private static final Mesh WATER_MESH =
-            MeshFile.loadFileRequired(Directory.meshes.getPath("general", "sea.ply")).getMesh();
+            MeshFile.loadFileRequired(Directory.meshes.getPath("general", "sea_25.ply")).getMesh();
     private final Texture2D WATER_TEXTURE;
 
     private static final float WATER_LEVEL = 0;
     private static final int OCEAN_LAYERS = 5;
+    private static final float BASE_WATER_SCALING = 2f;
 
     private static final int MAX_POINT_LIGHTS = 16;
 
@@ -112,11 +113,11 @@ public class WaterShader extends SceneShader {
         gl.pushMatrix();
         {
             gl.translate(playerPosition.x(), playerPosition.y(), WATER_LEVEL);
-            gl.scale(0.5f);
+            gl.scale(BASE_WATER_SCALING);
 
             gl.render(WATER_MESH, null);
             gl.pushMatrix();
-            for (int i = 0; i < OCEAN_LAYERS; i++) {
+            for (int i = 1; i < OCEAN_LAYERS; i++) {
                 oceanLayer(gl);
                 gl.scale(3, 3, 1);
             }

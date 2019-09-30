@@ -15,16 +15,16 @@ import NG.Rendering.Shaders.ShaderProgram;
 import NG.Shapes.Shape;
 import NG.Storable;
 import NG.Tools.Directory;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-import org.joml.Vector3i;
-import org.joml.Vector3ic;
+import org.joml.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.Math;
 import java.util.List;
 import java.util.Map;
+
+import static java.lang.StrictMath.PI;
 
 /**
  * @author Geert van Ieperen created on 2-9-2019.
@@ -32,12 +32,11 @@ import java.util.Map;
 public abstract class AbstractPiece {
     public static final boolean RENDER_STUDS = true;
 
+    private static final float QUARTER = (float) (PI * 0.5f);
     public static final float BLOCK_BASE = 0.8f; // m
     public static final float BLOCK_HEIGHT = 0.32f; // m
     /** size of a 1x1x1 block, base in meters, scaled by 100 */
     public static final Vector3fc BLOCK_SIZE = new Vector3f(BLOCK_BASE, BLOCK_BASE, BLOCK_HEIGHT);
-    /** weight of a scaled 1x1x1 block, in kg */
-    public static final float BLOCK_WEIGHT = 96f; // kg // = 0.096g * (100 * 100 * 100)
     /** volume of a scaled 1x1x1 block, in m^3 */
     public static final float BLOCK_VOLUME = BLOCK_BASE * BLOCK_BASE * BLOCK_HEIGHT;
 
@@ -130,6 +129,11 @@ public abstract class AbstractPiece {
         );
         Vector3f gPos = grid.getStructurePosition();
         return localOffset.rotate(grid.getStructureRotation()).add(gPos);
+    }
+
+    public Quaternionf getStructureRotation(BlockSubGrid parentGrid) {
+        Quaternionf parentRot = parentGrid.getStructureRotation();
+        return new Quaternionf().rotateZ(QUARTER * rotation).mul(parentRot);
     }
 
     /**

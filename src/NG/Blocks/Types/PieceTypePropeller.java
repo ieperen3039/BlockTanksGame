@@ -1,6 +1,7 @@
 package NG.Blocks.Types;
 
 import NG.DataStructures.Generic.Color4f;
+import NG.Rendering.MeshLoading.Mesh;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
 import org.joml.Vector3fc;
@@ -12,10 +13,12 @@ import java.util.List;
  * @author Geert van Ieperen created on 20-8-2019.
  */
 public class PieceTypePropeller extends PieceType {
-    public final MeshFile propeller;
     public final Vector3fc propellerOffset;
-    public final float maxRotSpeed = 10;
-    public final float maxForce = 10_000;
+    public final float maxRotSpeed = 5;
+    public final float maxForce = 100000;
+
+    private final MeshFile propeller;
+    private Mesh propellerMesh;
 
     public PieceTypePropeller(
             String name, String category, MeshFile axisMesh, Shape axisShape, Vector3ic axisSize, float mass,
@@ -37,8 +40,19 @@ public class PieceTypePropeller extends PieceType {
         );
     }
 
+    /**
+     * must only be called on the rendering thread
+     * @return the mesh of the propeller
+     */
+    public Mesh getPropellerMesh() {
+        if (propellerMesh == null) {
+            propellerMesh = propeller.getMesh();
+        }
+        return propellerMesh;
+    }
+
     @Override
     public AbstractPiece getInstance(Vector3ic position, int zRotation, Color4f color) {
-        return new PropellerPiece(this, position, color);
+        return new PropellerPiece(this, position, color, 0);
     }
 }

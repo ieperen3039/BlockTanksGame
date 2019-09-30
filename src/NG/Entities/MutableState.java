@@ -174,8 +174,9 @@ public class MutableState implements State {
         float gameTime = Toolbox.interpolate(time, other.time(), fraction);
         Vector3fx p = new Vector3fx(position).lerp(other.position(), fraction);
         Vector3f v = new Vector3f(velocity).lerp(other.velocity(), fraction);
+        Quaternionf o = orientation.nlerpIterative(other.orientation(), fraction, LERP_DOT_THRESHOLD);
 
-        return new MutableState(gameTime, p, v, orientation, rotationSpeed);
+        return new MutableState(gameTime, p, v, o, rotationSpeed);
     }
 
     @Override

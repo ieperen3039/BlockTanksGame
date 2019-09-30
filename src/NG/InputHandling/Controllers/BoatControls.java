@@ -26,11 +26,6 @@ public interface BoatControls extends Controller {
     float steering();
 
     /**
-     * @return the FOV multiplier as requested by the controller, as fraction of the default FOV.
-     */
-    float viewAngle();
-
-    /**
      * @return true if the controller requests firing of the selected guns
      */
     boolean fire();

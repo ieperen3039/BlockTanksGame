@@ -3,8 +3,6 @@ package NG.Camera;
 import NG.CollisionDetection.GameState;
 import NG.Core.Game;
 import NG.DataStructures.Tracked.ExponentialSmoothVector;
-import NG.DataStructures.Vector3fx;
-import NG.DataStructures.Vector3fxc;
 import NG.Entities.Entity;
 import NG.Entities.State;
 import NG.Tools.Vectors;
@@ -16,8 +14,8 @@ import org.joml.Vector3fc;
  */
 public class FollowingCamera implements Camera {
     /** camera settings */
-    private static final Vector3fc eyeRelative = new Vector3f(-20, 0, 5);
-    private static final Vector3fc focusRelativeToEye = new Vector3f(30, 0, 0);
+    private static final Vector3fc RELATIVE_EYE = new Vector3f(-20, 0, 5);
+    private static final Vector3fc RELATIVE_FOCUS = new Vector3f(0, 0, 2);
     private static final double EYE_PRESERVE = 1.0E-5;
     private static final double ORIENT_PRESERVE = 1.0E-4;
     private static final float TELEPORT_DISTANCE_SQ = 50f * 50f;
@@ -31,20 +29,21 @@ public class FollowingCamera implements Camera {
     private Entity target;
     private Game game;
 
-    public FollowingCamera(Vector3f initialPosition, Entity target, Vector3f initialUp, Vector3f vecToFocus) {
+    public FollowingCamera(Entity target, Vector3fc initialPosition, Vector3fc initialUp, Vector3fc vecToFocus) {
         this.eye = new ExponentialSmoothVector(initialPosition, EYE_PRESERVE);
         this.vecToFocus = new ExponentialSmoothVector(vecToFocus, ORIENT_PRESERVE);
         this.up = new ExponentialSmoothVector(initialUp, ORIENT_PRESERVE);
         this.target = target;
     }
 
-    public FollowingCamera(Entity target, int gameTime){
+    public FollowingCamera(Entity target, float gameTime){
         this.target = target;
         State state = target.getStateAt(gameTime);
-        Vector3f targetEye = new Vector3f(eyeRelative).rotate(state.orientation());
+        Vector3f tPos = state.position().toVector3f();
+        Vector3f targetEye = tPos.add(RELATIVE_EYE).rotate(state.orientation());
         Vector3fc targetUp = Vectors.newZ().rotate(state.orientation());
         this.eye = new ExponentialSmoothVector(targetEye, EYE_PRESERVE);
-        this.vecToFocus = new ExponentialSmoothVector(new Vector3f(targetEye).add(focusRelativeToEye), ORIENT_PRESERVE);
+        this.vecToFocus = new ExponentialSmoothVector(new Vector3f(tPos).add(RELATIVE_FOCUS), ORIENT_PRESERVE);
         this.up = new ExponentialSmoothVector(targetUp, ORIENT_PRESERVE);
     }
 
@@ -69,11 +68,13 @@ public class FollowingCamera implements Camera {
      */
     @Override
     public void updatePosition(float deltaTime, float renderTime) {
+        if (game == null) return;
         State state = target.getStateAt(renderTime);
 
-        Vector3fc targetUp = Vectors.newZ().rotate(state.orientation());
-        Vector3f targetEye = new Vector3f(eyeRelative).rotate(state.orientation());
-        Vector3fc targetPos = state.position().toVector3f();
+        Vector3f targetUp = Vectors.newZ().rotate(state.orientation());
+        Vector3f targetPos = state.position().toVector3f();
+        Vector3f targetEye = new Vector3f(RELATIVE_EYE)
+                .rotate(state.orientation());
 
         // prevent looking through walls;
         if (game.has(GameState.class)) {
@@ -83,12 +84,16 @@ public class FollowingCamera implements Camera {
 
         targetEye.add(targetPos);
 
-        Vector3fxc targetFocus;
+        Vector3f targetVecToFocus;
         // if the target is removed, look at the place where the target was
         if (target.isDisposed()) {
-            targetFocus = state.position();
+            targetVecToFocus = new Vector3f(targetPos).sub(targetEye);
+
         } else {
-            targetFocus = new Vector3fx(targetEye).add(focusRelativeToEye);
+            targetVecToFocus = new Vector3f(RELATIVE_FOCUS)
+                    .rotate(state.orientation())
+                    .add(targetPos)
+                    .sub(targetEye);
         }
 
         // teleport camera when too far away
@@ -98,7 +103,7 @@ public class FollowingCamera implements Camera {
             eye.updateFluent(targetEye, deltaTime);
         }
 
-        vecToFocus.updateFluent(targetFocus.toVector3f(), deltaTime);
+        vecToFocus.updateFluent(targetVecToFocus, deltaTime);
         up.updateFluent(targetUp, deltaTime);
     }
 

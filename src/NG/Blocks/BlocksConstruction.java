@@ -9,6 +9,7 @@ import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import NG.Entities.*;
+import NG.InputHandling.Controllers.BoatControls;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MatrixStack.ShadowMatrix;
 import NG.Settings.Settings;
@@ -28,9 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static NG.Blocks.BasicBlocks.BLOCK_WEIGHT;
 import static NG.Blocks.BlocksConstruction._ClassVersion.INITIAL;
 import static NG.Blocks.Types.AbstractPiece.BLOCK_VOLUME;
-import static NG.Blocks.Types.AbstractPiece.BLOCK_WEIGHT;
 
 /**
  * An entity made from block grids
@@ -40,11 +41,13 @@ public class BlocksConstruction extends MovingEntity {
     private static final float WATER_RESIST_FACTOR = 20f;
     private static final float AIR_RESIST_FACTOR = 2f;
 
+    private final boolean doPerBlockBuoyancy = false;
+    private final boolean doRotation = false;
+
     private final List<BlockSubGrid> subgrids;
     private final List<ForceBlock> forceBlocks = new ArrayList<>();
 
-    private final boolean doPerBlockBuoyancy = false;
-    private final boolean doRotation = true;
+    private BoatControls controller;
 
     public BlocksConstruction(Vector3fxc position, Quaternionf rotation, float gameTime) {
         this(new FixedState(position, rotation, gameTime));
@@ -58,6 +61,7 @@ public class BlocksConstruction extends MovingEntity {
 
     @Override
     public void preUpdate(float gameTime, float deltaTime) {
+        controller.update(gameTime);
         BuoyancyComputation buoy = new BuoyancyComputation();
         Vector3fxc thisPosition = state.position();
         Quaternionfc thisOrientation = state.orientation();
@@ -94,10 +98,9 @@ public class BlocksConstruction extends MovingEntity {
 
         float gravity = Settings.GRAVITY_CONSTANT * mass;
         state.addForce(temp.set(0, 0, -gravity), mass);
-        Logger.WARN.print(thisPosition, gravity - upForce);
 
         if (doRotation) {
-            if (momentInertia == 0){
+            if (momentInertia == 0) {
                 momentInertia = hitbox.size().div(4).lengthSquared() * mass;
             }
             Vector3f rotationForce = buoy.getRotationXYZ(COM, mass, upForce);
@@ -105,16 +108,25 @@ public class BlocksConstruction extends MovingEntity {
         }
 
         for (ForceBlock block : forceBlocks) {
+            block.fPiece.update(gameTime, deltaTime, controller.throttle());
+
             Vector3f structurePosition = block.piece.getStructurePosition(block.grid);
             Vector3fx bPos = new Vector3fx(structurePosition).add(state.position());
-            Vector3f force = block.fPiece.getForce(bPos);
-            Vector3f comToPos = bPos.subToVector3f(COM);
+            Vector3f force = block.fPiece.getDirection(block.grid);
+            force.mul(block.fPiece.getForce());
 
-            float distSq = Vectors.getDistanceSqPointLine(force, comToPos);
+            // COM movement
+            state.addForce(force, mass);
 
-            // @see BuoyancyComputation#getRotationXYZ(Vector3fxc, float, float)
-            float torque = (force.length()) / distSq;
-            comToPos.normalize().cross(Vectors.Z).mul(torque / mass); // probably wrong, but close enough
+            // rotation
+            if (doRotation) {
+                // @see BuoyancyComputation#getRotationXYZ(Vector3fxc, float, float)
+                Vector3f comToPos = bPos.subToVector3f(COM);
+                float distSq = Vectors.getDistanceSqPointLine(force, comToPos);
+                float torque = (force.length()) / distSq;
+                comToPos.normalize().cross(Vectors.Z).mul(torque / mass); // probably wrong, but close enough
+                state.addRotation(comToPos, momentInertia);
+            }
         }
 
         // resistances, assumes motion in x-direction
@@ -128,6 +140,8 @@ public class BlocksConstruction extends MovingEntity {
 
 //        Logger.WARN.print(gravity, resistForce, rotationForce);
         super.preUpdate(gameTime, deltaTime);
+
+        state.setVelocity(new Vector3f(state.velocity()).mul(0.99f));
     }
 
 
@@ -158,6 +172,14 @@ public class BlocksConstruction extends MovingEntity {
         }
 
         return COM.div(totalMass);
+    }
+
+    public void setController(BoatControls controller) {
+        this.controller = controller;
+    }
+
+    public BoatControls getController() {
+        return controller;
     }
 
     @Override
@@ -269,7 +291,13 @@ public class BlocksConstruction extends MovingEntity {
         DataOutputStream bufferOut = new DataOutputStream(buffer);
         bufferOut.writeInt(subgrids.size());
         for (BlockSubGrid s : subgrids) {
-            s.writeToDataStream(bufferOut, types);
+            Storable.writeQuaternionf(bufferOut, s.getStructureRotation());
+
+            bufferOut.writeInt(s.blocks.size());
+            for (AbstractPiece piece : s.blocks) {
+                Storable.writeClass(bufferOut, piece.getClass());
+                piece.writeToDataStream(bufferOut, types);
+            }
         }
 
         // gather types and connect id values
@@ -321,8 +349,33 @@ public class BlocksConstruction extends MovingEntity {
 
         int nrOfGrids = in.readInt();
         subgrids = new ArrayList<>(nrOfGrids);
+
         for (int i = 0; i < nrOfGrids; i++) {
-            subgrids.add(new BlockSubGrid(in, typeMap));
+            Quaternionf orientation = Storable.readQuaternionf(in);
+            BlockSubGrid grid = new BlockSubGrid(orientation);
+
+            int nrOfBlocks = in.readInt();
+            for (int j = 0; j < nrOfBlocks; j++) {
+
+                AbstractPiece piece;
+                try {
+                    // not the most beautiful, but robust enough
+                    piece = Storable.readClass(in, AbstractPiece.class)
+                            .getConstructor(DataInputStream.class, PieceType[].class)
+                            .newInstance(in, typeMap);
+
+                } catch (ReflectiveOperationException ex) {
+                    throw new IOException(ex);
+                }
+
+                if (piece instanceof ForceGeneratingBlock) {
+                    forceBlocks.add(new ForceBlock(piece, grid));
+                }
+
+                grid.add(piece);
+            }
+
+            subgrids.add(grid);
         }
     }
 
@@ -359,7 +412,7 @@ public class BlocksConstruction extends MovingEntity {
                     subgrids.add(newGrid);
                 }
             }
-            if (block instanceof ForceGenerating){
+            if (block instanceof ForceGeneratingBlock) {
                 forceBlocks.add(new ForceBlock(block, target));
             }
         }
@@ -396,12 +449,12 @@ public class BlocksConstruction extends MovingEntity {
     private static class ForceBlock {
         public final AbstractPiece piece;
         public final BlockSubGrid grid;
-        public final ForceGenerating fPiece;
+        public final ForceGeneratingBlock fPiece;
 
         private ForceBlock(AbstractPiece piece, BlockSubGrid grid) {
             this.piece = piece;
             this.grid = grid;
-            this.fPiece = (ForceGenerating) piece;
+            this.fPiece = (ForceGeneratingBlock) piece;
         }
     }
 }

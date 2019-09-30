@@ -25,7 +25,7 @@ public interface GameState extends GameAspect, Storable, MouseToolListener {
     void update(float gameTime, float deltaTime);
 
     /**
-     * draws the objects on the screen, according to the state of a {@link NG.Core.GameTimer} object.
+     * draws the objects on the screen, according to the state of a {@link GameTimer} object.
      * @param gl the gl object to draw with
      */
     void drawEntities(SGL gl);

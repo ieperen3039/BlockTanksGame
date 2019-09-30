@@ -14,6 +14,7 @@ import NG.DataStructures.Vector3fx;
 import NG.GUIMenu.BaseLF;
 import NG.GUIMenu.Components.*;
 import NG.GUIMenu.SimpleHUD;
+import NG.InputHandling.Controllers.BoatControls;
 import NG.InputHandling.KeyPressListener;
 import NG.InputHandling.MouseToolCallbacks;
 import NG.Rendering.GLFWWindow;
@@ -147,6 +148,7 @@ public class ConstructionMenu extends SimpleHUD implements KeyPressListener {
     public void init(Game game) throws Exception {
         super.init(game);
 
+        BoatControls controller = null;
         setConstruction(new BlocksConstruction(new Vector3fx(), new Quaternionf(), 0));
 
         game.get(GameState.class).addEntity(

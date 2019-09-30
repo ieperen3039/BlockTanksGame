@@ -9,14 +9,10 @@ import NG.CollisionDetection.Collision;
 import NG.DataStructures.Generic.AABBi;
 import NG.Entities.Entity;
 import NG.Rendering.MatrixStack.SGL;
-import NG.Storable;
 import NG.Tools.GridRayScanner;
 import NG.Tools.Logger;
 import org.joml.*;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.lang.Math;
 import java.util.*;
 
@@ -49,6 +45,11 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         clear();
     }
 
+    public BlockSubGrid(Quaternionf orientation) {
+        rotation = orientation;
+        clear();
+    }
+
     public boolean add(AbstractPiece block) {
         PieceType type = block.getType();
         AABBi hitBox = block.getHitBox();
@@ -67,6 +68,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         centerOfMass.div(totalMass);
 
         blocks.add(block, hitBox);
+
         return true;
     }
 
@@ -209,34 +211,6 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
             }
         }
         gl.popMatrix();
-    }
-
-    public void writeToDataStream(DataOutputStream out, HashMap<PieceType, Integer> typeMap) throws IOException {
-        Storable.writeQuaternionf(out, rotation);
-
-        out.writeInt(blocks.size());
-        for (AbstractPiece s : blocks) {
-            Storable.writeClass(out, s.getClass());
-            s.writeToDataStream(out, typeMap);
-        }
-    }
-
-    public BlockSubGrid(DataInputStream in, PieceType[] typeMap) throws IOException {
-        rotation = Storable.readQuaternionf(in);
-        clear();
-
-        int nrOfBlocks = in.readInt();
-        try {
-            for (int i = 0; i < nrOfBlocks; i++) {
-                // not the most beautiful, but robust enough
-                AbstractPiece piece = Storable.readClass(in, AbstractPiece.class)
-                        .getConstructor(DataInputStream.class, PieceType[].class)
-                        .newInstance(in, typeMap);
-                add(piece);
-            }
-        } catch (ReflectiveOperationException ex) {
-            throw new IOException(ex);
-        }
     }
 
     /**

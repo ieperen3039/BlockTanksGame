@@ -1,12 +1,10 @@
 package NG.Blocks.Types;
 
+import NG.Blocks.BlockSubGrid;
 import NG.DataStructures.Generic.Color4f;
-import NG.DataStructures.Vector3fxc;
 import NG.Entities.Entity;
-import NG.Entities.ForceGenerating;
-import NG.Rendering.MatrixStack.MatrixStack;
+import NG.Entities.ForceGeneratingBlock;
 import NG.Rendering.MatrixStack.SGL;
-import NG.Tools.BuoyancyComputation;
 import NG.Tools.Vectors;
 import org.joml.Vector3f;
 import org.joml.Vector3ic;
@@ -15,20 +13,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * @author Geert van Ieperen created on 20-8-2019.
  */
-public class PropellerPiece extends AbstractPiece implements ForceGenerating {
+public class PropellerPiece extends AbstractPiece implements ForceGeneratingBlock {
     private PieceTypePropeller type;
     private float rotSpeed;
     private float lastDrawTime = 0;
     private float propellerRotation = 0;
-    private Supplier<Float> activationSupplier;
+    private float activation = 0;
 
-    PropellerPiece(PieceTypePropeller type, Vector3ic position, Color4f color) {
-        super(position, 0, color);
+    PropellerPiece(PieceTypePropeller type, Vector3ic position, Color4f color, int rotation) {
+        super(position, rotation, color);
         this.type = type;
         this.rotSpeed = 1f;
     }
@@ -42,6 +39,7 @@ public class PropellerPiece extends AbstractPiece implements ForceGenerating {
         gl.translate(type.propellerOffset);
         gl.rotateQuarter(0, 1, 0);
         gl.rotate(propellerRotation, Vectors.Z);
+        gl.render(type.getPropellerMesh(), entity);
         lastDrawTime = renderTime;
     }
 
@@ -49,13 +47,9 @@ public class PropellerPiece extends AbstractPiece implements ForceGenerating {
         this.rotSpeed = rotSpeed;
     }
 
-    public void setActivationSupplier(Supplier<Float> activationSupplier) {
-        this.activationSupplier = activationSupplier;
-    }
-
     @Override
     public AbstractPiece copy() {
-        return new PropellerPiece(type, position, color);
+        return new PropellerPiece(type, position, color, rotation);
     }
 
     @Override
@@ -72,34 +66,22 @@ public class PropellerPiece extends AbstractPiece implements ForceGenerating {
     public PropellerPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
         super(in);
         type = (PieceTypePropeller) typeMap[in.readInt()];
-        rotSpeed = 0;
+        rotSpeed = 1;
     }
 
     @Override
-    public void doLocal(MatrixStack gl, float renderTime, Runnable action) {
-        gl.pushMatrix();
-        {
-            gl.translate(
-                    position.x * BLOCK_BASE,
-                    position.y * BLOCK_BASE,
-                    position.z * BLOCK_HEIGHT
-            );
-            gl.rotate(rotSpeed * renderTime, 0, 0, 1);
-
-            action.run();
-        }
-        gl.popMatrix();
+    public void update(float gameTime, float deltaTime, float activation) {
+//        rotSpeed = Toolbox.interpolate(rotSpeed, type.maxRotSpeed * activation, 0.9f);
+        rotSpeed = type.maxRotSpeed * activation;
     }
 
     @Override
-    public Vector3f getForce(Vector3fxc position) {
-        boolean inWater = position.z() < BuoyancyComputation.FLUID_LEVEL;
-        if (!inWater) return Vectors.newZero();
+    public float getForce() {
+        return (rotSpeed / type.maxRotSpeed) * type.maxForce;
+    }
 
-        float fraction = (rotSpeed / type.maxRotSpeed) * activationSupplier.get();
-        Vector3f force = new Vector3f(fraction * type.maxForce, 0, 0);
-        rotateQuarters(force, rotation);
-
-        return force;
+    @Override
+    public Vector3f getDirection(BlockSubGrid grid) {
+        return new Vector3f(-1, 0, 0).rotate(getStructureRotation(grid));
     }
 }

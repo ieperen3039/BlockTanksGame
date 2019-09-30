@@ -5,7 +5,6 @@
 
   "blocks" : {
     "connection14" : {
-      "description" : "The company's first attempt on a joint. It failed successfully.",
       "size" : [1, 4, 0],
       "topPoints" : [
         [0, 0, 0], [0, 1, 0], [0, 2, 0], [0, 3, 0]
@@ -16,6 +15,7 @@
 
   "joints" : {
     "Corner 1x4x3" : {
+      "description" : "The company's first attempt on a joint. It failed successfully.",
       "bottom" : [1, 4, 3],
       "top" : "connection14",
       "axis" : "y",

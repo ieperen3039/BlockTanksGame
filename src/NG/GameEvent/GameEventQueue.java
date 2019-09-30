@@ -1,7 +1,7 @@
 package NG.GameEvent;
 
 import NG.Core.Game;
-import NG.Core.GameTimer;
+import NG.Core.GameTimeControl;
 import NG.Tools.Logger;
 
 import java.util.PriorityQueue;
@@ -40,7 +40,7 @@ public class GameEventQueue extends Thread implements EventLoop {
                 Event nextEvent = eventQueue.remove();
                 lockNewEvent.unlock();
 
-                GameTimer timer = game.get(GameTimer.class);
+                GameTimeControl timer = game.get(GameTimeControl.class);
                 timer.updateGameTime();
                 float gametime = timer.getGametime();
                 float remainingSeconds = nextEvent.getTime() - gametime;

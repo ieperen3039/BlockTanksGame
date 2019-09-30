@@ -12,12 +12,7 @@ import NG.Tools.Toolbox;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
@@ -32,8 +27,8 @@ public class MouseToolCallbacks implements GameAspect, KeyMouseCallbacks {
     private final Collection<MousePositionListener> mousePositionListeners = new ArrayList<>();
 
     private DefaultMouseTool DEFAULT_MOUSE_TOOL;
-
-    private final ExecutorService taskScheduler = Executors.newSingleThreadExecutor();
+    private final Queue<Runnable> tasks = new ArrayDeque<>();
+    private Thread executiveExecuter = new Thread(this::taskExecution, "InputHandlerThread");
 
     private Game game;
     private KeyTypeListener keyTypeListener = null;
@@ -51,6 +46,8 @@ public class MouseToolCallbacks implements GameAspect, KeyMouseCallbacks {
         Vector2i mousePosition = target.getMousePosition();
         target.setCallbacks(new KeyPressCallback(), new MouseButtonPressCallback(), new MouseMoveCallback(mousePosition), new MouseScrollCallback());
         target.setTextCallback(new CharTypeCallback());
+        executiveExecuter.setDaemon(true);
+        executiveExecuter.start();
     }
 
     @Override
@@ -59,7 +56,6 @@ public class MouseToolCallbacks implements GameAspect, KeyMouseCallbacks {
         keyReleaseListeners.clear();
         mousePositionListeners.clear();
         keyTypeListener = null;
-        taskScheduler.shutdown();
     }
 
     @Override
@@ -200,15 +196,35 @@ public class MouseToolCallbacks implements GameAspect, KeyMouseCallbacks {
     }
 
     private void execute(Runnable action) {
-        taskScheduler.submit(() -> {
-            try {
-                action.run();
+        synchronized (tasks) {
+            tasks.add(action);
+            tasks.notify();
+        }
+    }
 
-            } catch (Throwable ex) {
-                // Caught an error while executing an input handler.
-                // Look at the second element of the stack trace
-                Logger.ERROR.print(ex);
+    private void taskExecution() {
+        try {
+            while (true) {
+                Runnable action;
+                synchronized (tasks) {
+                    while (tasks.isEmpty()) {
+                        tasks.wait();
+                    }
+
+                    action = tasks.remove();
+                }
+
+                try {
+                    action.run();
+
+                } catch (Throwable ex) {
+                    // Caught an error while executing an input handler.
+                    // Look at the second element of the stack trace
+                    Logger.ERROR.print(ex);
+                }
             }
-        });
+        } catch (InterruptedException e) {
+            Logger.ERROR.print(e);
+        }
     }
 }

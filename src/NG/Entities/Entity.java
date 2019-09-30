@@ -2,7 +2,6 @@ package NG.Entities;
 
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
-import NG.Core.GameTimer;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Storable;
 import org.joml.Vector3f;

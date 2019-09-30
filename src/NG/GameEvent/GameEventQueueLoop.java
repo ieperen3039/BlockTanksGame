@@ -3,6 +3,7 @@ package NG.GameEvent;
 import NG.CollisionDetection.GameState;
 import NG.Core.AbstractGameLoop;
 import NG.Core.Game;
+import NG.Core.GameTimeControl;
 import NG.Core.GameTimer;
 import NG.Storable;
 
@@ -46,7 +47,7 @@ public class GameEventQueueLoop extends AbstractGameLoop implements Storable, Ev
 
     @Override
     protected void update(float deltaTime) throws Exception {
-        GameTimer timer = game.get(GameTimer.class);
+        GameTimeControl timer = game.get(GameTimeControl.class);
         GameState state = game.get(GameState.class);
 
         timer.updateGameTime();
