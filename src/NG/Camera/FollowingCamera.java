@@ -1,6 +1,5 @@
 package NG.Camera;
 
-import NG.CollisionDetection.GameState;
 import NG.Core.Game;
 import NG.DataStructures.Tracked.ExponentialSmoothVector;
 import NG.Entities.Entity;
@@ -15,9 +14,9 @@ import org.joml.Vector3fc;
 public class FollowingCamera implements Camera {
     /** camera settings */
     private static final Vector3fc RELATIVE_EYE = new Vector3f(-20, 0, 5);
-    private static final Vector3fc RELATIVE_FOCUS = new Vector3f(0, 0, 2);
-    private static final double EYE_PRESERVE = 1.0E-5;
-    private static final double ORIENT_PRESERVE = 1.0E-4;
+    private static final Vector3fc RELATIVE_FOCUS = new Vector3f(0, 0, 5);
+    private static final double EYE_PRESERVE = 1.0E-1;
+    private static final double ORIENT_PRESERVE = 1.0E-1;
     private static final float TELEPORT_DISTANCE_SQ = 50f * 50f;
 
     /**
@@ -75,12 +74,6 @@ public class FollowingCamera implements Camera {
         Vector3f targetPos = state.position().toVector3f();
         Vector3f targetEye = new Vector3f(RELATIVE_EYE)
                 .rotate(state.orientation());
-
-        // prevent looking through walls;
-        if (game.has(GameState.class)) {
-            Float fraction = game.get(GameState.class).getEntityByRay(targetPos, targetEye, renderTime).right;
-            if (fraction < 1) targetEye.mul(fraction);
-        }
 
         targetEye.add(targetPos);
 

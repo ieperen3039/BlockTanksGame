@@ -5,8 +5,8 @@ import NG.Blocks.BlocksConstruction;
 import NG.Blocks.FilePieceTypeCollection;
 import NG.Blocks.PieceTypeCollection;
 import NG.Camera.Camera;
-import NG.Camera.FollowingCamera;
 import NG.Camera.PointCenteredCamera;
+import NG.Camera.PointFollowingCamera;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.GameState;
 import NG.CollisionDetection.PhysicsEngine;
@@ -351,13 +351,14 @@ public class MainGame implements ModLoader {
                 gameState.addEntity(entity);
 
                 Camera camera = game.get(Camera.class);
-                game.remove(camera);
-                FollowingCamera newCamera = new FollowingCamera(entity, camera.getEye(), camera.getUpVector(), camera.vectorToFocus());
+                Vector3fc position = entity.getStateAt(gameTime).position().toVector3f();
+                Camera newCamera = new PointFollowingCamera(camera.getEye(), entity, position);
                 newCamera.init(game);
                 game.add(newCamera);
+                game.remove(camera);
                 camera.cleanup();
 
-                Logger.printOnline(() -> Vectors.toString(getPlayerPosition()));
+                Logger.printOnline(() -> String.valueOf(player.entity.getStateAt(game.get(GameTimer.class).getRendertime())));
 
             } catch (Exception ex) {
                 Logger.ERROR.print("Could not open game", ex);

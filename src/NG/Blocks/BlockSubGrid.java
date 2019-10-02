@@ -29,24 +29,28 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     protected float totalMass = 0;
     private Vector3f centerOfMass = new Vector3f();
 
-    private Quaternionf rotation;
+    // these 6 are only valid when root != null
+    private BlockSubGrid root;
+    private Vector3fc rootJointOffset;
+    private Vector3ic axis;
+    private Vector3f realAxis;
     private Float minAngle = null;
     private Float maxAngle = null;
 
-    // these 4 are only valid when root != null
-    private BlockSubGrid root;
-    private Vector3fc rootJointOffset;
-    private Vector3fc jointGridOffset;
-    private Vector3ic axis;
-    private Vector3f realAxis;
+    // position
+    private Vector3f jointGridOffset;
+    // rotation
+    private Quaternionf rotation;
 
     public BlockSubGrid() {
         rotation = new Quaternionf();
+        jointGridOffset = new Vector3f();
         clear();
     }
 
-    public BlockSubGrid(Quaternionf orientation) {
-        rotation = orientation;
+    public BlockSubGrid(Quaternionf orientation, Vector3fc position) {
+        rotation = new Quaternionf(orientation);
+        jointGridOffset = new Vector3f(position);
         clear();
     }
 
@@ -72,8 +76,13 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         return true;
     }
 
-    public void removeParent() {
+    /**
+     * removes attachment properties, and set this subgrid to the given center.
+     * @param newPosition the new position of the origin of this subgrid.
+     */
+    public void setPosition(Vector3fc newPosition) {
         root = null;
+        jointGridOffset.set(newPosition);
     }
 
     /**
@@ -95,7 +104,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
 
             this.root = newParent;
             this.rootJointOffset = piecePos.add(offGridPos);
-            this.jointGridOffset = onGridPos;
+            this.jointGridOffset.set(onGridPos);
             this.axis = piece.getAxis();
 
             this.realAxis = new Vector3f(axis).rotate(newParent.getStructureRotation()).normalize();
@@ -216,7 +225,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     /**
      * @return structure-space hitbox
      */
-    public BoundingBox getLocalHitBox() {
+    public BoundingBox getStructureHitbox() {
         BoundingBox result = new BoundingBox();
         Quaternionf rotation = getStructureRotation();
 
@@ -229,8 +238,13 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
         addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMin - 0.5f, bounds.zMax + 1f);
         addBound(result, rotation, buffer, bounds.xMin - 0.5f, bounds.yMax + 0.5f, bounds.zMax + 1f);
         addBound(result, rotation, buffer, bounds.xMax + 0.5f, bounds.yMax + 0.5f, bounds.zMax + 1f);
+        result.move(getStructurePosition());
 
         return result;
+    }
+
+    public boolean isRoot() {
+        return root == null;
     }
 
     private static void addBound(BoundingBox dest, Quaternionf rotation, Vector3f buffer, float x, float y, float z) {
@@ -282,7 +296,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
      * @return contruction-space position
      */
     public Vector3f getStructurePosition() {
-        if (root == null) return new Vector3f();
+        if (root == null) return new Vector3f(jointGridOffset);
         Vector3f rootPos = root.getStructurePosition().add(rootJointOffset);
         Vector3f offset = new Vector3f(jointGridOffset).rotate(rotation);
         return rootPos.add(offset);

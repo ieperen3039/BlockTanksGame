@@ -1,6 +1,5 @@
 package NG.Entities;
 
-import NG.DataStructures.Generic.Pair;
 import NG.DataStructures.Interpolation.StateInterpolator;
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
@@ -12,14 +11,13 @@ import org.joml.Vector3f;
  * @author Geert van Ieperen created on 5-9-2019.
  */
 public abstract class MovingEntity implements Entity {
-    protected StateInterpolator pastStates;
     protected MutableState state;
-    private float stateTime;
     protected boolean isDisposed = false;
+
+    private StateInterpolator pastStates;
 
     public MovingEntity(State spawnState) {
         state = new MutableState(spawnState);
-        stateTime = spawnState.time();
         pastStates = new StateInterpolator(spawnState.copy(), spawnState.time());
     }
 
@@ -35,11 +33,8 @@ public abstract class MovingEntity implements Entity {
 
     @Override
     public State getStateAt(float gameTime) {
-        if (gameTime == stateTime) return state;
-
-        Pair<State, Float> lastState = pastStates.getLast();
-        if (lastState.right < gameTime) {
-            lastState.left.interpolateTime(state, gameTime);
+        if (gameTime == state.time()) {
+            return state;
         }
 
         return pastStates.getInterpolated(gameTime);

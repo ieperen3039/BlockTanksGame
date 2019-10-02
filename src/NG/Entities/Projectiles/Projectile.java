@@ -74,7 +74,7 @@ public abstract class Projectile extends MovingEntity {
 
     @Override
     public void collideWith(Entity other, Collision collision, float collisionTime) {
-        State collisionState = pastStates.getInterpolated(collisionTime);
+        State collisionState = getStateAt(collisionTime);
         float tickTime = state.time();
 
         Vector3f newVelocity;

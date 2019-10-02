@@ -29,7 +29,7 @@ public class PointCenteredCamera implements Camera, MousePositionListener, KeyPr
     /**
      * The point to which the camera is looking.
      */
-    public final Vector3f focus;
+    protected final Vector3f focus;
 
     /** we follow the ISO convention. Phi gives rotation, theta the height */
     private float theta;
@@ -47,15 +47,15 @@ public class PointCenteredCamera implements Camera, MousePositionListener, KeyPr
         this(Vectors.newZero(), 0, 0);
     }
 
-    public PointCenteredCamera(Vector3f eye, Vector3f focus){
+    public PointCenteredCamera(Vector3fc eye, Vector3fc focus){
         Vector3f focToEye = new Vector3f(eye).sub(focus);
 
         vDist = focToEye.length();
         phi = getPhi(focToEye);
         theta = getTheta(focToEye, vDist);
 
-        this.focus = focus;
-        this.eye = eye;
+        this.focus = new Vector3f(focus);
+        this.eye = new Vector3f(eye);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class PointCenteredCamera implements Camera, MousePositionListener, KeyPr
      * @param eye normalized vector to eye
      * @return phi
      */
-    private static float getPhi(Vector3fc eye) {
+    protected static float getPhi(Vector3fc eye) {
         return (float) Math.atan2(eye.y(), eye.x());
     }
 
@@ -90,7 +90,7 @@ public class PointCenteredCamera implements Camera, MousePositionListener, KeyPr
      * @param vDist distance to origin
      * @return theta
      */
-    private static float getTheta(Vector3fc eye, float vDist) {
+    protected static float getTheta(Vector3fc eye, float vDist) {
         return (float) Math.acos(eye.z() / vDist);
     }
 

@@ -16,7 +16,6 @@ import NG.Settings.Settings;
 import NG.Storable;
 import NG.Tools.BuoyancyComputation;
 import NG.Tools.Logger;
-import NG.Tools.Toolbox;
 import NG.Tools.Vectors;
 import org.joml.*;
 
@@ -71,6 +70,8 @@ public class BlocksConstruction extends MovingEntity {
         float momentInertia = 0;
         Vector3f temp = new Vector3f();
 
+        setCenterToMass();
+
         for (BlockSubGrid grid : subgrids) {
             if (doPerBlockBuoyancy) {
                 for (AbstractPiece piece : grid) {
@@ -84,12 +85,10 @@ public class BlocksConstruction extends MovingEntity {
                 }
 
             } else {
-                BoundingBox localHitBox = grid.getLocalHitBox();
-                BoundingBox globalHitbox = new BoundingBox();
-                globalHitbox.unionRotated(localHitBox, grid.getStructureRotation());
-                globalHitbox.move(thisPosition);
+                BoundingBox localHitBox = grid.getStructureHitbox();
+                localHitBox.move(thisPosition);
                 float volume = (grid.totalMass / BLOCK_WEIGHT) * BLOCK_VOLUME;
-                buoy.addAABB(globalHitbox, volume);
+                buoy.addAABB(localHitBox, volume);
             }
         }
 
@@ -144,7 +143,6 @@ public class BlocksConstruction extends MovingEntity {
         state.setVelocity(new Vector3f(state.velocity()).mul(0.99f));
     }
 
-
     @Override
     public float getMass() {
         float sum = 0f;
@@ -152,6 +150,16 @@ public class BlocksConstruction extends MovingEntity {
             sum += subgrid.getMass();
         }
         return sum;
+    }
+
+    public void setCenterToMass(){
+        Vector3f localCOM = getLocalCenterOfMass();
+
+        for (BlockSubGrid grid : subgrids) {
+            if (grid.isRoot()){
+                grid.setPosition(localCOM.negate());
+            }
+        }
     }
 
     @Override
@@ -186,12 +194,11 @@ public class BlocksConstruction extends MovingEntity {
     public void draw(SGL gl, float renderTime) {
         gl.pushMatrix();
         {
-            gl.translateRotate(state);
+            gl.translateRotate(getStateAt(renderTime));
+
             for (BlockSubGrid subgrid : subgrids) {
                 subgrid.draw(gl, this, renderTime);
             }
-            gl.translate(getLocalCenterOfMass());
-            Toolbox.draw3DPointer(gl);
         }
         gl.popMatrix();
 
@@ -200,16 +207,16 @@ public class BlocksConstruction extends MovingEntity {
 
     @Override
     public BoundingBox getHitbox(float time) {
-        BoundingBox box = new BoundingBox();
+        BoundingBox globalHitbox = new BoundingBox();
         Quaternionfc orientation = getStateAt(time).orientation();
 
-        for (BlockSubGrid subgrid : subgrids) {
-            box.unionRotated(subgrid.getLocalHitBox(), orientation);
+        for (BlockSubGrid grid : subgrids) {
+            BoundingBox localHitBox = grid.getStructureHitbox();
+            globalHitbox.unionRotated(localHitBox, orientation);
         }
+        globalHitbox.move(getStateAt(time).position());
 
-        box.move(getStateAt(time).position());
-
-        return box;
+        return globalHitbox;
     }
 
     @Override
@@ -352,7 +359,7 @@ public class BlocksConstruction extends MovingEntity {
 
         for (int i = 0; i < nrOfGrids; i++) {
             Quaternionf orientation = Storable.readQuaternionf(in);
-            BlockSubGrid grid = new BlockSubGrid(orientation);
+            BlockSubGrid grid = new BlockSubGrid(orientation, Vectors.O);
 
             int nrOfBlocks = in.readInt();
             for (int j = 0; j < nrOfBlocks; j++) {

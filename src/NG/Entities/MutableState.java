@@ -4,6 +4,7 @@ import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import NG.Storable;
 import NG.Tools.Toolbox;
+import NG.Tools.Vectors;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
 import org.joml.Vector3f;
@@ -194,5 +195,10 @@ public class MutableState implements State {
         orientation = Storable.readQuaternionf(in);
         rotationSpeed = Storable.readQuaternionf(in);
         time = in.readFloat();
+    }
+
+    @Override
+    public String toString() {
+        return position.toString() + Vectors.newX().rotate(orientation);
     }
 }
