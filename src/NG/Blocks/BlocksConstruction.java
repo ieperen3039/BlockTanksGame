@@ -37,8 +37,9 @@ import static NG.Blocks.Types.AbstractPiece.BLOCK_VOLUME;
  * @author Geert van Ieperen created on 14-8-2019.
  */
 public class BlocksConstruction extends MovingEntity {
-    private static final float WATER_RESIST_FACTOR = 20f;
+    private static final float WATER_RESIST_FACTOR = 10f;
     private static final float AIR_RESIST_FACTOR = 2f;
+    private static final float STEERING_GYRO_FORCE = 100f;
 
     private final boolean doPerBlockBuoyancy = false;
     private final boolean doRotation = false;
@@ -70,7 +71,7 @@ public class BlocksConstruction extends MovingEntity {
         float momentInertia = 0;
         Vector3f temp = new Vector3f();
 
-        setCenterToMass();
+        setOriginToMass();
 
         for (BlockSubGrid grid : subgrids) {
             if (doPerBlockBuoyancy) {
@@ -128,6 +129,10 @@ public class BlocksConstruction extends MovingEntity {
             }
         }
 
+        // steering - gyro
+        float steering = controller.steering();
+        state.addRotation(new Vector3f(0, 0, (steering * STEERING_GYRO_FORCE)), momentInertia);
+
         // resistances, assumes motion in x-direction
         float inWaterFrac = buoy.getSubmergedFraction(hitbox);
         Vector3fc velocity = state.velocity();
@@ -152,12 +157,13 @@ public class BlocksConstruction extends MovingEntity {
         return sum;
     }
 
-    public void setCenterToMass(){
+    public void setOriginToMass(){
         Vector3f localCOM = getLocalCenterOfMass();
 
         for (BlockSubGrid grid : subgrids) {
             if (grid.isRoot()){
                 grid.setPosition(localCOM.negate());
+                // TODO update state
             }
         }
     }
