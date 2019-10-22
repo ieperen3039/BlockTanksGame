@@ -8,7 +8,7 @@ in vec4[1] geoColor;
 in vec2[1] geoBeginEndTime;// (beginTime, endTime)
 in int[1] randomNumber;
 
-out vec4 fragColor;
+smooth out vec4 fragColor;
 
 uniform mat4 viewProjectionMatrix;
 uniform float currentTime;
@@ -30,7 +30,7 @@ float rand() {
 
     randomState = x;
     float result = x % 256;
-    return result / 256f;
+    return result / 256.0;
 }
 
 void generateVertex(vec3 rel, vec3 rot, float angle){

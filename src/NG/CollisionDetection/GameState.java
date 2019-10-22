@@ -4,12 +4,14 @@ import NG.Core.GameAspect;
 import NG.DataStructures.Generic.Pair;
 import NG.Entities.Entity;
 import NG.Entities.MovingEntity;
+import NG.Entities.Projectiles.Projectile;
 import NG.InputHandling.MouseTools.MouseToolListener;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Storable;
 import org.joml.Vector3fc;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A collection of all entities in the world, all lights present in the world. Allows querying for specific objects and
@@ -62,4 +64,9 @@ public interface GameState extends GameAspect, Storable, MouseToolListener {
      */
     Collection<Entity> entities();
 
+    default void addAllEntities(List<? extends Entity> entities) {
+        for (Entity entity : entities) {
+            addEntity(entity);
+        }
+    }
 }

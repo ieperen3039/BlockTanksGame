@@ -1,0 +1,33 @@
+{
+  "manufacturer" : "Zahl",
+  "slogan" : "You'll only need one",
+  "internal slogan" : "SPRICH DEUTCH, DU HURENSON",
+
+  "blocks" : {
+    "base_mount" : {
+      "size" : [1, 2, 1],
+      "bottomPoints" : [
+        [0, 0, 0], [0, 1, 0]
+      ],
+      "hidden" : true
+    },
+    "14_barrel" : {
+      "size" : [1, 4, 1],
+      "graphic" : "../143_bar.ply",
+      "hidden" : true
+    }
+  },
+
+  "guns" : {
+    "Maus" : {
+      "description" : "Your most trusty little gun. Has quite some wiggle room, but lacks a punch",
+      "base" : "base_mount",
+      "barrel" : "14_barrel",
+      "horizontalAngle" : 10.0,
+      "verticalMinAngle" : 0.0,
+      "verticalMaxAngle" : 30.0,
+      "reloadTime" : 5.0,
+      "rotationSpeed" : 10.0
+    }
+  }
+}

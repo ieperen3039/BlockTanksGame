@@ -1,6 +1,7 @@
 package NG.Blocks;
 
 import NG.Blocks.Types.PieceType;
+import NG.Blocks.Types.PieceTypeGun;
 import NG.Blocks.Types.PieceTypeJoint;
 import NG.Blocks.Types.PieceTypePropeller;
 import NG.DataStructures.Generic.Pair;
@@ -22,6 +23,7 @@ import static NG.Blocks.Types.AbstractPiece.BLOCK_BASE;
 
 /**
  * a collection of block types. parsing is done as described in res/blocks/readme.txt
+ *
  * @author Geert van Ieperen created on 16-8-2019.
  */
 public class FilePieceTypeCollection implements PieceTypeCollection {
@@ -161,7 +163,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
 
             JsonNode bottomNode = wheel.findValue("axis");
             PieceType axisPiece = allBlocks.get(bottomNode.textValue());
-            assert axisPiece != null : name + " axis field "+bottomNode.textValue()+" does not match a known block";
+            assert axisPiece != null : name + " axis field " + bottomNode.textValue() + " does not match a known block";
 
             JsonNode propMeshNode = wheel.findValue("propellerMesh");
             MeshFile propMesh;
@@ -184,7 +186,44 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             ));
         }
 
-        PieceTypeCollection.allCollections.put(getCategory(), this);
+        /* guns */
+        JsonNode gunsNode = root.findValue("guns");
+        fields = gunsNode != null ? gunsNode.fields() : Collections.emptyIterator();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> node = fields.next();
+            String name = node.getKey();
+            JsonNode gun = node.getValue();
+
+            JsonNode bottomNode = gun.findValue("base");
+            PieceType bottomPiece;
+            if (bottomNode.isArray()) {
+                bottomPiece = BasicBlocks.get(readVector3i(bottomNode));
+            } else {
+                bottomPiece = allBlocks.get(bottomNode.textValue());
+            }
+
+            JsonNode topNode = gun.findValue("barrel");
+            PieceType topPiece = allBlocks.get(topNode.textValue());
+
+            float horzAngle = (float) gun.findValue("horizontalAngle").asDouble();
+            float vertMinAngle = (float) gun.findValue("verticalMinAngle").asDouble();
+            float vertMaxAngle = (float) gun.findValue("verticalMaxAngle").asDouble();
+
+            float reloadTime = (float) gun.findValue("reloadTime").asDouble();
+            float rotationSpeed = (float) gun.findValue("rotationSpeed").asDouble();
+
+            JsonNode offsetNode = gun.findValue("jointOffset");
+            Vector3fc jointOffset = offsetNode == null ? Vectors.O : readVector3f(offsetNode);
+
+            float mass = bottomPiece.mass + topPiece.mass;
+
+            blocks.put(name, new PieceTypeGun(
+                    name, manufacturer, bottomPiece, topPiece, jointOffset,
+                    horzAngle, vertMinAngle, vertMaxAngle, reloadTime, rotationSpeed, mass
+            ));
+        }
+
+        PieceTypeCollection.allCollections.put(manufacturer, this);
     }
 
     private Pair<List<Vector3ic>, Integer> getConnections(JsonNode block) {

@@ -346,13 +346,23 @@ public final class Vectors {
         return alpha.distanceSquared(beta) < VECTOR_EQUALITY_DIST_SQ;
     }
 
-    public static float getDistanceSqPointLine(Vector3f lineDirection, Vector3f vecToOrigin) {
+    public static float getDistancePointLine(Vector3fc origin, Vector3fc direction, Vector3fc point){
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @param lineDirection the direction of the line
+     * @param vecToPoint a vector from a point on the line the point
+     * @return the length of the smallest distance between the point and the line.
+     */
+    public static float getDistanceSqPointLine(Vector3fc lineDirection, Vector3fc vecToPoint) {
+        Logger.WARN.print("Requires attention");
         float d21x = lineDirection.x();
         float d21y = lineDirection.y();
         float d21z = lineDirection.z();
-        float d10x = vecToOrigin.x() + lineDirection.x();
-        float d10y = vecToOrigin.y() + lineDirection.y();
-        float d10z = vecToOrigin.z() + lineDirection.z();
+        float d10x = vecToPoint.x() + lineDirection.x();
+        float d10y = vecToPoint.y() + lineDirection.y();
+        float d10z = vecToPoint.z() + lineDirection.z();
         float cx = d21y * d10z - d21z * d10y;
         float cy = d21z * d10x - d21x * d10z;
         float cz = d21x * d10y - d21y * d10x;

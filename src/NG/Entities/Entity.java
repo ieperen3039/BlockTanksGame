@@ -2,6 +2,8 @@ package NG.Entities;
 
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
+import NG.Core.Game;
+import NG.Core.GameTimer;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Storable;
 import org.joml.Vector3f;
@@ -27,11 +29,13 @@ public interface Entity extends Storable {
 
     /**
      * applies physics updates and control updates. The new state is not yet visible to {@link #getStateAt(float)}
+     *
+     * @param game the game object
      * @param gameTime the current game time
      * @param deltaTime
      * @see State#update(float)
      */
-    void preUpdate(float gameTime, float deltaTime);
+    void preUpdate(Game game, float gameTime, float deltaTime);
 
     /**
      * confirms the current state, making it visible to {@link #getStateAt(float)}

@@ -25,7 +25,7 @@ import java.util.Collection;
  * @author Geert van Ieperen created on 17-8-2019.
  */
 public abstract class AbstractGameState implements GameState {
-    private Game game;
+    protected Game game;
 
     @Override
     public void init(Game game) throws Exception {

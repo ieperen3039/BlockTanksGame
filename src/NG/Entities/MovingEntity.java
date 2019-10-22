@@ -1,5 +1,6 @@
 package NG.Entities;
 
+import NG.Core.Game;
 import NG.DataStructures.Interpolation.StateInterpolator;
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
@@ -22,7 +23,7 @@ public abstract class MovingEntity implements Entity {
     }
 
     @Override
-    public void preUpdate(float gameTime, float deltaTime) {
+    public void preUpdate(Game game, float gameTime, float deltaTime) {
         state.updateAround(gameTime, getCenterOfMass());
     }
 

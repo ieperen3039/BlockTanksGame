@@ -289,6 +289,11 @@ public abstract class AbstractPiece {
      */
     protected abstract void write(DataOutputStream out, Map<PieceType, Integer> typeMap) throws IOException;
 
+    /**
+     * All pieces must override this constructor with {@code DataInputStream, PieceType[]} as its arguments
+     * @param in the inputs stream, synced to a call of {@link #writeToDataStream(DataOutputStream, Map)}
+     * @throws IOException
+     */
     AbstractPiece(DataInputStream in) throws IOException {
         this(
                 new Vector3i(

@@ -311,7 +311,7 @@ public class MeshMap extends AbstractMap {
         }
 
         @Override
-        public void preUpdate(float gameTime, float deltaTime) {
+        public void preUpdate(Game game, float gameTime, float deltaTime) {
 
         }
     }

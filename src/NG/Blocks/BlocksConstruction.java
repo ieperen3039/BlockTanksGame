@@ -1,14 +1,18 @@
 package NG.Blocks;
 
 import NG.Blocks.Types.AbstractPiece;
+import NG.Blocks.Types.GunPiece;
 import NG.Blocks.Types.JointPiece;
 import NG.Blocks.Types.PieceType;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
+import NG.CollisionDetection.GameState;
+import NG.Core.Game;
 import NG.DataStructures.Generic.Color4f;
 import NG.DataStructures.Vector3fx;
 import NG.DataStructures.Vector3fxc;
 import NG.Entities.*;
+import NG.Entities.Projectiles.Projectile;
 import NG.InputHandling.Controllers.BoatControls;
 import NG.Rendering.MatrixStack.SGL;
 import NG.Rendering.MatrixStack.ShadowMatrix;
@@ -45,7 +49,6 @@ public class BlocksConstruction extends MovingEntity {
     private final boolean doRotation = false;
 
     private final List<BlockSubGrid> subgrids;
-    private final List<ForceBlock> forceBlocks = new ArrayList<>();
 
     private BoatControls controller;
 
@@ -60,7 +63,7 @@ public class BlocksConstruction extends MovingEntity {
     }
 
     @Override
-    public void preUpdate(float gameTime, float deltaTime) {
+    public void preUpdate(Game game, float gameTime, float deltaTime) {
         controller.update(gameTime);
         BuoyancyComputation buoy = new BuoyancyComputation();
         Vector3fxc thisPosition = state.position();
@@ -107,25 +110,36 @@ public class BlocksConstruction extends MovingEntity {
             state.addRotation(rotationForce, momentInertia); // every point m * r^2
         }
 
-        for (ForceBlock block : forceBlocks) {
-            block.fPiece.update(gameTime, deltaTime, controller.throttle());
+        for (BlockSubGrid grid : subgrids) {
+            for (AbstractPiece block : grid) {
+                if (block instanceof GunPiece) {
+                    GunPiece gunPiece = (GunPiece) block;
+                    gunPiece.update(gameTime, deltaTime, controller.fire(), deltaTime, deltaTime);
+                    List<Projectile> firedBullets = gunPiece.getFiredBullets(this, grid);
+                    game.get(GameState.class).addAllEntities(firedBullets);
+                }
 
-            Vector3f structurePosition = block.piece.getStructurePosition(block.grid);
-            Vector3fx bPos = new Vector3fx(structurePosition).add(state.position());
-            Vector3f force = block.fPiece.getDirection(block.grid);
-            force.mul(block.fPiece.getForce());
+                if (block instanceof ForceGeneratingBlock){
+                    ForceGeneratingBlock fPiece = (ForceGeneratingBlock) block;
+                    fPiece.update(gameTime, deltaTime, controller.throttle());
+                    Vector3f force = fPiece.getDirection(grid);
+                    force.mul(fPiece.getForce());
+                    // COM movement
+                    state.addForce(force, mass);
 
-            // COM movement
-            state.addForce(force, mass);
+                    Vector3f structurePosition = block.getStructurePosition(grid);
+                    Vector3fx worldPosition = new Vector3fx(structurePosition).add(state.position());
 
-            // rotation
-            if (doRotation) {
-                // @see BuoyancyComputation#getRotationXYZ(Vector3fxc, float, float)
-                Vector3f comToPos = bPos.subToVector3f(COM);
-                float distSq = Vectors.getDistanceSqPointLine(force, comToPos);
-                float torque = (force.length()) / distSq;
-                comToPos.normalize().cross(Vectors.Z).mul(torque / mass); // probably wrong, but close enough
-                state.addRotation(comToPos, momentInertia);
+                    // rotation
+                    if (doRotation) {
+                        // @see BuoyancyComputation#getRotationXYZ(Vector3fxc, float, float)
+                        Vector3f comToPos = worldPosition.subToVector3f(COM);
+                        float distSq = Vectors.getDistanceSqPointLine(force, comToPos);
+                        float torque = (force.length()) / distSq;
+                        comToPos.normalize().cross(Vectors.Z).mul(torque / mass); // probably wrong, but close enough
+                        state.addRotation(comToPos, momentInertia);
+                    }
+                }
             }
         }
 
@@ -133,7 +147,7 @@ public class BlocksConstruction extends MovingEntity {
         float steering = controller.steering();
         state.addRotation(new Vector3f(0, 0, (steering * STEERING_GYRO_FORCE)), momentInertia);
 
-        // resistances, assumes motion in x-direction
+        // resistances. for surface, assumes motion in x-direction
         float inWaterFrac = buoy.getSubmergedFraction(hitbox);
         Vector3fc velocity = state.velocity();
         float vSq = velocity.lengthSquared();
@@ -143,7 +157,7 @@ public class BlocksConstruction extends MovingEntity {
         state.addForce(resistForce, mass);
 
 //        Logger.WARN.print(gravity, resistForce, rotationForce);
-        super.preUpdate(gameTime, deltaTime);
+        super.preUpdate(game, gameTime, deltaTime);
 
         state.setVelocity(new Vector3f(state.velocity()).mul(0.99f));
     }
@@ -381,10 +395,6 @@ public class BlocksConstruction extends MovingEntity {
                     throw new IOException(ex);
                 }
 
-                if (piece instanceof ForceGeneratingBlock) {
-                    forceBlocks.add(new ForceBlock(piece, grid));
-                }
-
                 grid.add(piece);
             }
 
@@ -424,9 +434,6 @@ public class BlocksConstruction extends MovingEntity {
                     newGrid.setParent(target, jointBlock, true);
                     subgrids.add(newGrid);
                 }
-            }
-            if (block instanceof ForceGeneratingBlock) {
-                forceBlocks.add(new ForceBlock(block, target));
             }
         }
 

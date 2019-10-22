@@ -22,7 +22,6 @@ public class PropellerPiece extends AbstractPiece implements ForceGeneratingBloc
     private float rotSpeed;
     private float lastDrawTime = 0;
     private float propellerRotation = 0;
-    private float activation = 0;
 
     PropellerPiece(PieceTypePropeller type, Vector3ic position, Color4f color, int rotation) {
         super(position, rotation, color);
@@ -41,10 +40,6 @@ public class PropellerPiece extends AbstractPiece implements ForceGeneratingBloc
         gl.rotate(propellerRotation, Vectors.Z);
         gl.render(type.getPropellerMesh(), entity);
         lastDrawTime = renderTime;
-    }
-
-    public void setRotSpeed(float rotSpeed) {
-        this.rotSpeed = rotSpeed;
     }
 
     @Override

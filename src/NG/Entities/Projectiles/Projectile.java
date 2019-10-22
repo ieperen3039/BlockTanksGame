@@ -10,6 +10,7 @@ import NG.Entities.MutableState;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,15 +21,26 @@ import java.util.List;
 public abstract class Projectile extends MovingEntity {
     private static final BoundingBox zeroBox = new BoundingBox(0, 0, 0, 0, 0, 0);
 
-    protected final Game game;
-    private float spawnTime;
+    protected Game game;
+    private float spawnTime = Float.NEGATIVE_INFINITY;
     private Entity source;
 
-    public Projectile(Game game, Entity source, float spawnTime, MutableState spawnState) {
+    public Projectile(MutableState spawnState) {
         super(spawnState);
+    }
+
+    @Override
+    public void preUpdate(Game game, float gameTime, float deltaTime) {
+        if (gameTime > spawnTime) {
+            super.preUpdate(game, gameTime, deltaTime);
+        }
+    }
+
+    public void init(Game game, Entity source, float spawnTime){
         this.game = game;
         this.source = source;
         this.spawnTime = spawnTime;
+        this.state.setTime(spawnTime);
     }
 
     @Override
@@ -62,7 +74,7 @@ public abstract class Projectile extends MovingEntity {
     public List<Vector3f> getShapePoints(List<Vector3f> dest, float gameTime) {
         if (dest.size() != 1) dest = Collections.singletonList(new Vector3f());
 
-        state.position().toVector3f(dest.get(0));
+        getStateAt(gameTime).position().toVector3f(dest.get(0));
 
         return dest;
     }
@@ -88,5 +100,11 @@ public abstract class Projectile extends MovingEntity {
         state.setVelocity(newVelocity);
 
         state.update(tickTime);
+    }
+
+    @Override
+    public Collision getIntersection(Vector3fc origin, Vector3fc direction) {
+        assert false : "Something collided with a bullet";
+        return Collision.NONE;
     }
 }

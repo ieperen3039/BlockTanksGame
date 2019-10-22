@@ -1,10 +1,13 @@
-
+Every directory in res/blocks is searched for a blocks.json file. If one is found, it is read and all blocks added to
+the game under the given manufacturer name. All default blocks are added to the game using this format, so take a look
+at the existing maps for some examples.
 
 Description of blocks.json format:
 { // accolades around entire file (as the JSON standard dictates)
   "manufacturer" : "/your company name, may include spaces/",
   "slogan" : "/a one-line description of your company/"
-  "blocks" : { // all fields are optional
+
+  "blocks" : { // all fields are optional unless stated otherwise
     "/name of the block, may include spaces/" : {
       "description" : "/informal description as shown to the player/"
       "graphic" : "/exact file name, relative to this file. Use .. to access parent map/", // mesh used for drawing. Excludes any kind of studs
@@ -24,7 +27,7 @@ Description of blocks.json format:
 
   "joints" : { // all fields are required
     "/name of the joint, may include spaces/" : {
-      "description" : "/informal description as shown to the player/"
+      "description" : "/informal description as shown to the player/",
       "bottom" : "/name of the bottom part as defined in "blocks"/", // usually, both bottom and top have ("hidden" : true)
       "top" : "/name of the top part as defined in "blocks"/",
       // for both top and bottom, also [/integer width x/, /integer width y/, /integer height z/] is accepted, where a basic block of the given dimensions is generated.
@@ -37,11 +40,25 @@ Description of blocks.json format:
 
   "propellers" : {
     "/name of the block, may include spaces/" : {
-      "description" : "/informal description as shown to the player/"
+      "description" : "/informal description as shown to the player/",
       "axis" : "/name of the axis mount as defined in "blocks"/",
       "propellerMesh" : "/exact file name, relative to this file. Use .. to access parent map/", // mesh of the propeller
       "propellerOffset" : [/exact x/, /exact y/, /exact z/] // absolute offset of the propeller relative to the axis block origin
     }
   }
+
+  "guns" : {
+    "/name of the block, may include spaces/" : { // all fields are required unless stated otherwise
+      "description" : "/informal description as shown to the player/",
+      "base" : "/name of the bottom part as defined in "blocks"/", // the static part of the gun
+      "barrel" : "/name of the barrel part as defined in "blocks"/", // rotates both vertical and (indirectly) horizontal
+      "horizontalAngle" : /exact maximum horizontal angular movement of the top part/, // in degrees, to left + to right. Defaults to 0
+      "verticalMinAngle" : /exact minimum vertical angle of the top part/, // in degrees
+      "verticalMaxAngle" : /exact maximum vertical angle of the top part/, // in degrees
+      "reloadTime" : /exact time between shots/, // in seconds
+      "rotationSpeed" : /exact aiming speed/, // in degrees/second, for both horizontal as vertical
+      "jointOffset" : [/exact x/, /exact y/, /exact z/] // center of barrel rotations. Defaults to (0, 0, 0)
+    }
+  }
 }
-End description of blocks.json format. Order of same-level components does not matter.
+End description of blocks.json format. Order of components within a block does not matter.

@@ -18,6 +18,7 @@ import org.joml.Vector4fc;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 
@@ -54,7 +55,7 @@ public class WaterShader extends SceneShader {
         createUniform("material.reflectance");
 
         createUniform("waterHeightMap");
-        WATER_TEXTURE = DepthTexture.get(Directory.shaderTextures.getFile("water2.png"));
+        WATER_TEXTURE = DepthTexture.get(Paths.get("res", "check.png"));
         WATER_TEXTURE.setClamp(Texture2D.ClampMethod.MIRROR_REPEAT);
     }
 

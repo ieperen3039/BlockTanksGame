@@ -53,6 +53,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -134,12 +135,17 @@ public class MainGame implements ModLoader {
                     .add(gl -> WaterShader.drawOcean(gl, getPlayerPosition()))
             );
 
-            PieceTypeCollection[] blocks = {
-                    new BasicBlocks(),
-                    new FilePieceTypeCollection("Pivot"),
-                    new FilePieceTypeCollection("Engines")
-            };
-            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), blocks);
+            // add all directories from blocks
+            File[] files = Directory.blocks.getFiles();
+            List<PieceTypeCollection> blocks = new ArrayList<>();
+            blocks.add(new BasicBlocks());
+            for (File file : files) {
+                if (file.isDirectory()){
+                    blocks.add(new FilePieceTypeCollection(file.toPath()));
+                }
+            }
+
+            HUDManager constMenu = new ConstructionMenu(() -> gameService.select(menu), blocks.toArray(PieceTypeCollection[]::new));
             Camera constCamera = new PointCenteredCamera(new Vector3f(-10, 0, 20), new Vector3f());
             GameLights constLights = new SingleShadowMapLights(settings.STATIC_SHADOW_RESOLUTION, settings.DYNAMIC_SHADOW_RESOLUTION);
             GameState constState = new EntityList();

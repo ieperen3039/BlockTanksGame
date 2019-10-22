@@ -1,6 +1,7 @@
 package NG.Entities;
 
 import NG.CollisionDetection.Collision;
+import NG.Core.Game;
 import NG.DataStructures.Vector3fxc;
 import org.joml.Quaternionf;
 
@@ -21,7 +22,7 @@ public abstract class StaticEntity implements Entity {
     }
 
     @Override
-    public void preUpdate(float gameTime, float deltaTime) {
+    public void preUpdate(Game game, float gameTime, float deltaTime) {
         state.update(gameTime);
     }
 
