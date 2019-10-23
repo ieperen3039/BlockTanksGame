@@ -70,7 +70,7 @@ public abstract class AbstractPiece {
                 if (STUD_MESH == null) STUD_MESH = STUD.getMesh();
 
                 gl.translate(-BLOCK_BASE / 2, -BLOCK_BASE / 2, 0);
-                for (Vector3ic conn : getType().getMaleConnections()) {
+                for (Vector3ic conn : getBaseType().getMaleConnections()) {
                     gl.pushMatrix();
                     gl.translate(conn.x() * BLOCK_BASE, conn.y() * BLOCK_BASE, conn.z() * BLOCK_HEIGHT);
                     gl.render(STUD_MESH, entity);
@@ -105,7 +105,7 @@ public abstract class AbstractPiece {
      * @param renderTime the current
      */
     protected void drawPiece(SGL gl, Entity entity, float renderTime) {
-        getType().draw(gl, entity);
+        getBaseType().draw(gl, entity);
     }
 
     /**
@@ -150,7 +150,7 @@ public abstract class AbstractPiece {
      * @see #getHitBox()
      */
     protected void recalculateHitbox() {
-        Vector3i travel = new Vector3i(getType().dimensions).sub(1, 1, 1);
+        Vector3i travel = new Vector3i(getBaseType().dimensions).sub(1, 1, 1);
         Vector3i virtualPos = new Vector3i(position);
 
         if (travel.x < 0) {
@@ -189,7 +189,7 @@ public abstract class AbstractPiece {
             ld.set(ld.y, -ld.x, ld.z);
         }
 
-        return getType().hitbox.getIntersection(origin, direction);
+        return getBaseType().hitbox.getIntersection(origin, direction);
     }
 
     /**
@@ -199,8 +199,8 @@ public abstract class AbstractPiece {
      * @return true iff these blocks have at least one connection point in common.
      */
     public boolean canConnect(AbstractPiece other) {
-        List<Vector3ic> thisConnections = this.getType().getConnections();
-        List<Vector3ic> otherConnections = other.getType().getConnections();
+        List<Vector3ic> thisConnections = this.getBaseType().getConnections();
+        List<Vector3ic> otherConnections = other.getBaseType().getConnections();
 
         for (Vector3ic connection : thisConnections) {
             Vector3i p = new Vector3i(connection);
@@ -243,13 +243,11 @@ public abstract class AbstractPiece {
         return rotation;
     }
 
-    public abstract PieceType getType();
+    public abstract PieceTypeBlock getBaseType();
 
     public abstract AbstractPiece copy();
 
-    public Shape getShape() {
-        return getType().hitbox;
-    }
+    public abstract Shape getShape();
 
     public static void rotateQuarters(Vector3i vector, byte quarters) {
         for (byte i = 0; i < quarters; i++) {

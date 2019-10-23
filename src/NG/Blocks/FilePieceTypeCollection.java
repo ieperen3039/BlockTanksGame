@@ -1,9 +1,6 @@
 package NG.Blocks;
 
-import NG.Blocks.Types.PieceType;
-import NG.Blocks.Types.PieceTypeGun;
-import NG.Blocks.Types.PieceTypeJoint;
-import NG.Blocks.Types.PieceTypePropeller;
+import NG.Blocks.Types.*;
 import NG.DataStructures.Generic.Pair;
 import NG.Rendering.MeshLoading.MeshFile;
 import NG.Shapes.Shape;
@@ -36,7 +33,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
     public FilePieceTypeCollection(Path path) throws IOException {
         JsonNode root = new ObjectMapper().readTree(path.resolve("blocks.json").toFile());
         manufacturer = root.findValue("manufacturer").textValue();
-        Map<String, PieceType> allBlocks = new HashMap<>();
+        Map<String, PieceTypeBlock> allBlocks = new HashMap<>();
 
         /* blocks */
 
@@ -92,7 +89,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
 
             Pair<List<Vector3ic>, Integer> connections = getConnections(block);
 
-            PieceType pieceType = new PieceType(name, manufacturer, mesh, shape, size, mass, connections.left, connections.right);
+            PieceTypeBlock pieceType = new PieceTypeBlock(name, manufacturer, mesh, shape, size, mass, connections.left, connections.right);
 
             JsonNode hiddenNode = block.findValue("hidden");
             if (hiddenNode == null || !hiddenNode.asBoolean()) {
@@ -112,7 +109,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode joint = jointNode.getValue();
 
             JsonNode bottomNode = joint.findValue("bottom");
-            PieceType bottomPiece;
+            PieceTypeBlock bottomPiece;
             if (bottomNode.isArray()) {
                 bottomPiece = BasicBlocks.get(readVector3i(bottomNode));
             } else {
@@ -162,7 +159,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode wheel = wheelNode.getValue();
 
             JsonNode bottomNode = wheel.findValue("axis");
-            PieceType axisPiece = allBlocks.get(bottomNode.textValue());
+            PieceTypeBlock axisPiece = allBlocks.get(bottomNode.textValue());
             assert axisPiece != null : name + " axis field " + bottomNode.textValue() + " does not match a known block";
 
             JsonNode propMeshNode = wheel.findValue("propellerMesh");
@@ -195,7 +192,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             JsonNode gun = node.getValue();
 
             JsonNode bottomNode = gun.findValue("base");
-            PieceType bottomPiece;
+            PieceTypeBlock bottomPiece;
             if (bottomNode.isArray()) {
                 bottomPiece = BasicBlocks.get(readVector3i(bottomNode));
             } else {
@@ -203,7 +200,7 @@ public class FilePieceTypeCollection implements PieceTypeCollection {
             }
 
             JsonNode topNode = gun.findValue("barrel");
-            PieceType topPiece = allBlocks.get(topNode.textValue());
+            PieceTypeBlock topPiece = allBlocks.get(topNode.textValue());
 
             float horzAngle = (float) gun.findValue("horizontalAngle").asDouble();
             float vertMinAngle = (float) gun.findValue("verticalMinAngle").asDouble();

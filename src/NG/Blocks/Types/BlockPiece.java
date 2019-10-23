@@ -1,6 +1,7 @@
 package NG.Blocks.Types;
 
 import NG.DataStructures.Generic.Color4f;
+import NG.Shapes.Shape;
 import org.joml.Vector3ic;
 
 import java.io.DataInputStream;
@@ -12,9 +13,9 @@ import java.util.Map;
  * @author Geert van Ieperen created on 14-8-2019.
  */
 public class BlockPiece extends AbstractPiece {
-    private PieceType type;
+    private PieceTypeBlock type;
 
-    protected BlockPiece(PieceType type, Vector3ic position, int zRotation, Color4f color) {
+    protected BlockPiece(PieceTypeBlock type, Vector3ic position, int zRotation, Color4f color) {
         super(position, zRotation, color);
         this.type = type;
     }
@@ -25,7 +26,7 @@ public class BlockPiece extends AbstractPiece {
     }
 
     @Override
-    public PieceType getType() {
+    public PieceTypeBlock getBaseType() {
         return type;
     }
 
@@ -40,8 +41,13 @@ public class BlockPiece extends AbstractPiece {
         out.writeInt(typeID);
     }
 
-    public BlockPiece(DataInputStream in, PieceType[] typeMap) throws IOException {
+    public BlockPiece(DataInputStream in, PieceTypeBlock[] typeMap) throws IOException {
         super(in);
         type = typeMap[in.readInt()];
+    }
+
+    @Override
+    public Shape getShape() {
+        return getBaseType().hitbox;
     }
 }

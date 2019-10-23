@@ -55,7 +55,7 @@ public class BlockSubGrid extends AbstractCollection<AbstractPiece> {
     }
 
     public boolean add(AbstractPiece block) {
-        PieceType type = block.getType();
+        PieceType type = block.getBaseType();
         AABBi hitBox = block.getHitBox();
 
         this.bounds.union(hitBox);

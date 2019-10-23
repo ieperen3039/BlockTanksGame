@@ -7,21 +7,19 @@ import org.joml.Vector3ic;
 public class PieceTypeGun extends PieceType {
     public final float reloadTime;
     public final float rotationSpeed;
-    public final PieceType topPiece;
+    public final PieceTypeBlock bottomPiece;
+    public final PieceTypeBlock topPiece;
     public final Vector3fc jointOffset;
     public final float horzAngle;
     public final float vertMinAngle;
     public final float vertMaxAngle;
 
     public PieceTypeGun(
-            String name, String manufacturer, PieceType bottomPiece, PieceType topPiece, Vector3fc jointOffset,
+            String name, String manufacturer, PieceTypeBlock bottomPiece, PieceTypeBlock topPiece, Vector3fc jointOffset,
             float horzAngle, float vertMinAngle, float vertMaxAngle, float reloadTime, float rotationSpeed, float mass
     ) {
-        super(
-                name, manufacturer, bottomPiece.meshFile, bottomPiece.hitbox, bottomPiece.dimensions,
-                mass, bottomPiece.connections, bottomPiece.femaleStart
-        );
-
+        super(name, manufacturer, mass, bottomPiece.dimensions);
+        this.bottomPiece = bottomPiece;
         this.topPiece = topPiece;
         this.jointOffset = jointOffset;
         this.horzAngle = horzAngle;
@@ -29,6 +27,11 @@ public class PieceTypeGun extends PieceType {
         this.vertMaxAngle = vertMaxAngle;
         this.reloadTime = reloadTime;
         this.rotationSpeed = rotationSpeed;
+    }
+
+    @Override
+    public PieceTypeBlock getRootType() {
+        return bottomPiece;
     }
 
     @Override

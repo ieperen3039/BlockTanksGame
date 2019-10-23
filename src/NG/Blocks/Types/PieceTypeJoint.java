@@ -1,18 +1,15 @@
 package NG.Blocks.Types;
 
 import NG.DataStructures.Generic.Color4f;
-import NG.Rendering.MeshLoading.MeshFile;
-import NG.Shapes.Shape;
 import org.joml.Vector3fc;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
-
-import java.util.List;
 
 /**
  * @author Geert van Ieperen created on 20-8-2019.
  */
 public class PieceTypeJoint extends PieceType {
+    public final PieceTypeBlock bottomPiece;
     public final PieceType headPiece;
     public final Vector3ic axis;
     public final Vector3fc jointOffset; // this to joint
@@ -22,12 +19,12 @@ public class PieceTypeJoint extends PieceType {
     public final float maxAngle;
 
     public PieceTypeJoint(
-            String name, String category, MeshFile rootMesh, Shape rootBox, Vector3ic rootSize,
-            List<Vector3ic> rootConnections, int rootFStart, float mass, PieceType headPiece, char axis,
-            Vector3fc jointOffset, Vector3fc headOffset, boolean hasAngleLimit, float minAngle, float maxAngle
+            String name, String category, PieceTypeBlock bottomPiece, PieceType topPiece, char axis, Vector3fc jointOffset,
+            Vector3fc headOffset, boolean hasAngleLimit, float minAngle, float maxAngle
     ) {
-        super(name, category, rootMesh, rootBox, rootSize, mass, rootConnections, rootFStart);
-        this.headPiece = headPiece;
+        super(name, category, bottomPiece.mass + topPiece.mass, bottomPiece.dimensions);
+        this.bottomPiece = bottomPiece;
+        this.headPiece = topPiece;
         this.axis = new Vector3i(
                 (axis == 'x') ? 1 : 0,
                 (axis == 'y') ? 1 : 0,
@@ -40,15 +37,9 @@ public class PieceTypeJoint extends PieceType {
         this.maxAngle = maxAngle;
     }
 
-    public PieceTypeJoint(
-            String name, String category, PieceType bottomPiece, PieceType topPiece, char axis, Vector3fc jointOffset,
-            Vector3fc headOffset, boolean hasAngleLimit, float minAngle, float maxAngle
-    ) {
-        this(
-                name, category, bottomPiece.meshFile, bottomPiece.hitbox, bottomPiece.dimensions,
-                bottomPiece.connections, bottomPiece.femaleStart, bottomPiece.mass, topPiece, axis,
-                jointOffset, headOffset, hasAngleLimit, minAngle, maxAngle
-        );
+    @Override
+    public PieceTypeBlock getRootType() {
+        return bottomPiece;
     }
 
     @Override

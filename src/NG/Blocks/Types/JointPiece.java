@@ -2,6 +2,7 @@ package NG.Blocks.Types;
 
 import NG.Blocks.BlockSubGrid;
 import NG.DataStructures.Generic.Color4f;
+import NG.Shapes.Shape;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
@@ -23,8 +24,8 @@ public class JointPiece extends AbstractPiece {
     }
 
     @Override
-    public PieceTypeJoint getType() {
-        return type;
+    public PieceTypeBlock getBaseType() {
+        return type.bottomPiece;
     }
 
     public AbstractPiece copy() {
@@ -57,5 +58,14 @@ public class JointPiece extends AbstractPiece {
 
     public BlockSubGrid getSubgrid() {
         return subgrid;
+    }
+
+    @Override
+    public Shape getShape() {
+        return getBaseType().hitbox;
+    }
+
+    public PieceTypeJoint getType() {
+        return type;
     }
 }

@@ -10,6 +10,7 @@ import NG.Entities.Projectiles.DeathIcosahedron;
 import NG.Entities.Projectiles.Projectile;
 import NG.Entities.State;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Shapes.Shape;
 import NG.Tools.Toolbox;
 import org.joml.Vector3f;
 import org.joml.Vector3ic;
@@ -80,7 +81,7 @@ public class GunPiece extends AbstractPiece {
     protected void drawPiece(SGL gl, Entity entity, float renderTime) {
         gl.pushMatrix();
         {
-            type.draw(gl, entity);
+            type.bottomPiece.draw(gl, entity);
 
             gl.translate(type.jointOffset);
             gl.rotate(phi, 0, 0, 1);
@@ -154,8 +155,8 @@ public class GunPiece extends AbstractPiece {
     }
 
     @Override
-    public PieceType getType() {
-        return type;
+    public PieceTypeBlock getBaseType() {
+        return type.bottomPiece;
     }
 
     @Override
@@ -174,5 +175,10 @@ public class GunPiece extends AbstractPiece {
         super(in);
         type = (PieceTypeGun) typeMap[in.readInt()];
         timeNextFire = type.reloadTime;
+    }
+
+    @Override
+    public Shape getShape() {
+        return getBaseType().hitbox;
     }
 }

@@ -1,9 +1,6 @@
 package NG.Blocks;
 
-import NG.Blocks.Types.AbstractPiece;
-import NG.Blocks.Types.GunPiece;
-import NG.Blocks.Types.JointPiece;
-import NG.Blocks.Types.PieceType;
+import NG.Blocks.Types.*;
 import NG.CollisionDetection.BoundingBox;
 import NG.CollisionDetection.Collision;
 import NG.CollisionDetection.GameState;
@@ -81,11 +78,11 @@ public class BlocksConstruction extends MovingEntity {
                 for (AbstractPiece piece : grid) {
                     Vector3f structurePosition = piece.getStructurePosition(grid).rotate(thisOrientation);
                     Vector3fx pos = new Vector3fx(structurePosition).add(thisPosition);
-                    Vector3fc dim = piece.getType().realSize;
+                    Vector3fc dim = piece.getBaseType().realSize;
                     float volume = dim.x() * dim.y() * dim.z();
                     buoy.addPointVolume(pos, volume);
 
-                    momentInertia += piece.getType().mass * pos.sub(COM).lengthSquared();
+                    momentInertia += piece.getBaseType().mass * pos.sub(COM).lengthSquared();
                 }
 
             } else {
@@ -333,7 +330,7 @@ public class BlocksConstruction extends MovingEntity {
 
         out.writeInt(sorted.length);
         for (PieceType type : sorted) {
-            out.writeUTF(type.category);
+            out.writeUTF(type.manufacturer);
             out.writeUTF(type.name);
         }
 
@@ -388,7 +385,7 @@ public class BlocksConstruction extends MovingEntity {
                 try {
                     // not the most beautiful, but robust enough
                     piece = Storable.readClass(in, AbstractPiece.class)
-                            .getConstructor(DataInputStream.class, PieceType[].class)
+                            .getConstructor(DataInputStream.class, PieceTypeBlock[].class)
                             .newInstance(in, typeMap);
 
                 } catch (ReflectiveOperationException ex) {

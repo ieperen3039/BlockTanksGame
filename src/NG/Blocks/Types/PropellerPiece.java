@@ -5,6 +5,7 @@ import NG.DataStructures.Generic.Color4f;
 import NG.Entities.Entity;
 import NG.Entities.ForceGeneratingBlock;
 import NG.Rendering.MatrixStack.SGL;
+import NG.Shapes.Shape;
 import NG.Tools.Vectors;
 import org.joml.Vector3f;
 import org.joml.Vector3ic;
@@ -48,8 +49,8 @@ public class PropellerPiece extends AbstractPiece implements ForceGeneratingBloc
     }
 
     @Override
-    public PieceTypePropeller getType() {
-        return type;
+    public PieceTypeBlock getBaseType() {
+        return type.axisPiece;
     }
 
     @Override
@@ -78,5 +79,10 @@ public class PropellerPiece extends AbstractPiece implements ForceGeneratingBloc
     @Override
     public Vector3f getDirection(BlockSubGrid grid) {
         return new Vector3f(-1, 0, 0).rotate(getStructureRotation(grid));
+    }
+
+    @Override
+    public Shape getShape() {
+        return type.axisPiece.hitbox;
     }
 }
